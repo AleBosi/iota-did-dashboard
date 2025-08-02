@@ -1,8 +1,12 @@
+// src/anagrafiche/operatori/GestioneOperatori.tsx
+
 import React, { useState } from "react";
-import { Operatore } from "./OperatoreType";
+import { createOperatore } from "./OperatoreFactory";
 import { loadOperatori, saveOperatori } from "./operatoreStorage";
 import OperatoreForm from "./OperatoreForm";
 import OperatoreList from "./OperatoreList";
+
+type Operatore = ReturnType<typeof createOperatore>;
 
 export default function GestioneOperatori() {
   const [operatori, setOperatori] = useState<Operatore[]>(() => loadOperatori());
@@ -51,7 +55,11 @@ export default function GestioneOperatori() {
           onCancel={() => setShowForm(false)}
         />
       )}
-      <OperatoreList operatori={operatori} onEdit={handleEdit} onDelete={handleDelete} />
+      <OperatoreList
+        operatori={operatori}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

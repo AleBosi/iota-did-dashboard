@@ -1,25 +1,18 @@
+// src/anagrafiche/macchinari/MacchinarioForm.tsx
+
 import React, { useState } from "react";
-import { Macchinario } from "./TipoMacchinario";
+import { createMacchinario } from "./MacchinarioFactory";
 import { generateDid } from "../../utils/didUtils";
 
 type Props = {
-  initial?: Macchinario;
-  onSave: (m: Macchinario) => void;
+  initial?: ReturnType<typeof createMacchinario>;
+  onSave: (m: ReturnType<typeof createMacchinario>) => void;
   onCancel: () => void;
 };
 
 export default function MacchinarioForm({ initial, onSave, onCancel }: Props) {
-  const [form, setForm] = useState<Macchinario>(
-    initial || {
-      id: "",
-      did: generateDid(),
-      matricola: "",
-      nome: "",
-      linea: "",
-      reparto: "",
-      stabilimento: "",
-      stato: "Attivo",
-    }
+  const [form, setForm] = useState(
+    initial || createMacchinario({ did: generateDid() })
   );
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {

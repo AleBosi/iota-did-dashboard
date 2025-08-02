@@ -1,5 +1,9 @@
+// src/anagrafiche/macchinari/MacchinarioList.tsx
+
 import React from "react";
-import { Macchinario } from "./TipoMacchinario";
+import { createMacchinario } from "./MacchinarioFactory";
+
+type Macchinario = ReturnType<typeof createMacchinario>;
 
 type Props = {
   macchinari: Macchinario[];

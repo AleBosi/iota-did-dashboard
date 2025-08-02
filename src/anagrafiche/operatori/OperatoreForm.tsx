@@ -1,25 +1,17 @@
+// src/anagrafiche/operatori/OperatoreForm.tsx
+
 import React, { useState } from "react";
-import { Operatore } from "./OperatoreType";
+import { createOperatore } from "./OperatoreFactory";
 
 type Props = {
-  initial?: Operatore;
-  onSave: (o: Operatore) => void;
+  initial?: ReturnType<typeof createOperatore>;
+  onSave: (o: ReturnType<typeof createOperatore>) => void;
   onCancel: () => void;
 };
 
 export default function OperatoreForm({ initial, onSave, onCancel }: Props) {
-  const [form, setForm] = useState<Operatore>(
-    initial || {
-      id: "",
-      did: "",
-      nome: "",
-      cognome: "",
-      matricola: "",
-      reparto: "",
-      squadra: "",
-      stabilimento: "",
-      ruolo: "Operatore",
-    }
+  const [form, setForm] = useState(
+    initial || createOperatore()
   );
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -34,15 +26,13 @@ export default function OperatoreForm({ initial, onSave, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4">
-      <input name="nome" value={form.nome} onChange={handleChange} placeholder="Nome" required />
-      <input name="cognome" value={form.cognome} onChange={handleChange} placeholder="Cognome" required />
-      <input name="matricola" value={form.matricola} onChange={handleChange} placeholder="Matricola" required />
-      <input name="reparto" value={form.reparto} onChange={handleChange} placeholder="Reparto" />
-      <input name="squadra" value={form.squadra} onChange={handleChange} placeholder="Squadra" />
-      <input name="stabilimento" value={form.stabilimento} onChange={handleChange} placeholder="Stabilimento" />
-      <select name="ruolo" value={form.ruolo} onChange={handleChange}>
-        <option value="Operatore">Operatore</option>
-        <option value="Supervisore">Supervisore</option>
+      <input name="nome" value={form.nome} onChange={handleChange} placeholder="Nome" required className="input" />
+      <input name="ruolo" value={form.ruolo} onChange={handleChange} placeholder="Ruolo" required className="input" />
+      <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required className="input" />
+      <select name="stato" value={form.stato} onChange={handleChange} className="input">
+        <option value="Attivo">Attivo</option>
+        <option value="Sospeso">Sospeso</option>
+        <option value="Cessato">Cessato</option>
       </select>
       <div className="space-x-3">
         <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">Salva</button>

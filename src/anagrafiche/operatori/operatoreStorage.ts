@@ -1,15 +1,10 @@
-import { Operatore } from "./OperatoreType";
+// src/anagrafiche/operatori/operatoreStorage.ts
 
-const STORAGE_KEY = "anagrafica_operatori";
+export const loadOperatori = () => {
+  const data = localStorage.getItem("operatori");
+  return data ? JSON.parse(data) : [];
+};
 
-export function loadOperatori(): Operatore[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-export function saveOperatori(arr: Operatore[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
+export const saveOperatori = (operatori: any[]) => {
+  localStorage.setItem("operatori", JSON.stringify(operatori));
+};

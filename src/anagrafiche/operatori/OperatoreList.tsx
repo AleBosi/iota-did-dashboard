@@ -1,5 +1,9 @@
+// src/anagrafiche/operatori/OperatoreList.tsx
+
 import React from "react";
-import { Operatore } from "./OperatoreType";
+import { createOperatore } from "./OperatoreFactory";
+
+type Operatore = ReturnType<typeof createOperatore>;
 
 type Props = {
   operatori: Operatore[];
@@ -13,12 +17,9 @@ export default function OperatoreList({ operatori, onEdit, onDelete }: Props) {
       <thead>
         <tr>
           <th>Nome</th>
-          <th>Cognome</th>
-          <th>Matricola</th>
-          <th>Reparto</th>
-          <th>Squadra</th>
-          <th>Stabilimento</th>
           <th>Ruolo</th>
+          <th>Email</th>
+          <th>Stato</th>
           <th></th>
         </tr>
       </thead>
@@ -26,15 +27,12 @@ export default function OperatoreList({ operatori, onEdit, onDelete }: Props) {
         {operatori.map(o => (
           <tr key={o.id}>
             <td>{o.nome}</td>
-            <td>{o.cognome}</td>
-            <td>{o.matricola}</td>
-            <td>{o.reparto}</td>
-            <td>{o.squadra}</td>
-            <td>{o.stabilimento}</td>
             <td>{o.ruolo}</td>
+            <td>{o.email}</td>
+            <td>{o.stato}</td>
             <td>
               <button onClick={() => onEdit(o)} className="mr-2 text-blue-700">Modifica</button>
-              <button onClick={() => onDelete(o.id)} className="text-red-700">Elimina</button>
+              <button onClick={() => onDelete(o.id)} className="mr-2 text-red-700">Elimina</button>
             </td>
           </tr>
         ))}

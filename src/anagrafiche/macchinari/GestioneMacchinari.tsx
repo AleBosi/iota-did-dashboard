@@ -1,8 +1,12 @@
+// src/anagrafiche/macchinari/GestioneMacchinari.tsx
+
 import React, { useState } from "react";
-import { Macchinario } from "./TipoMacchinario";
+import { createMacchinario } from "./MacchinarioFactory";
 import { loadMacchinari, saveMacchinari } from "./macchinarioStorage";
 import MacchinarioForm from "./MacchinarioForm";
 import MacchinarioList from "./MacchinarioList";
+
+type Macchinario = ReturnType<typeof createMacchinario>;
 
 // Placeholder per la modale VC
 function ModalAggiungiVC({ macchinario, onClose }: { macchinario: Macchinario; onClose: () => void }) {

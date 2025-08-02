@@ -1,4 +1,4 @@
-export interface Macchinario {
+export type Macchinario = {
   id: string;
   did: string;
   matricola: string;
@@ -6,5 +6,5 @@ export interface Macchinario {
   linea: string;
   reparto: string;
   stabilimento: string;
-  stato: "Attivo" | "Manutenzione" | "Fermo";
+  stato: string;
 }
