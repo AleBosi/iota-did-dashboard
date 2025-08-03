@@ -9,7 +9,9 @@ export interface VCProof {
   hash: string;             // hash SHA-256 dei dati firmati
 }
 
+// AGGIUNGI LA RIGA '@context': string[];  
 export interface VerifiableCredential<T = any> {
+  '@context': string[];     // <--- AGGIUNGI QUI!
   id: string;
   type: string[];        // ["VerifiableCredential", ...]
   issuer: string;        // DID issuer

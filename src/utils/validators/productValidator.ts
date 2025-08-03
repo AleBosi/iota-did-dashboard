@@ -1,8 +1,8 @@
 import { Product } from "../../models/product";
 
 export function isProduct(obj: any): obj is Product {
+  if (!obj) return false; // 👈 AGGIUNGI QUESTA RIGA!
   return (
-    obj &&
     typeof obj.id === "string" &&
     typeof obj.did === "string" &&
     typeof obj.name === "string" &&

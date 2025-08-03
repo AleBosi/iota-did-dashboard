@@ -1,8 +1,8 @@
 import { Actor } from "../../models/actor";
 
 export function isActor(obj: any): obj is Actor {
+  if (!obj) return false; // 👈 aggiungi questa riga!
   return (
-    obj &&
     typeof obj.id === "string" &&
     typeof obj.name === "string" &&
     typeof obj.role === "string" &&

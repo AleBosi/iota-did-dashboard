@@ -13,6 +13,7 @@ export function issueVC<T>(
     proofPurpose: "assertionMethod",
     verificationMethod: issuer,
     jws: btoa(JSON.stringify(subject)), // solo mock
+    hash: "mockhash-" + id, // <-- AGGIUNTA QUI!
   };
   return {
     '@context': [

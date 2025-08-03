@@ -1,7 +1,8 @@
 import { Event } from "../../models/event";
 
 export function isEvent(obj: any): obj is Event {
-  return (
+  if (!obj) return false;
+    return (
     obj &&
     typeof obj.id === "string" &&
     typeof obj.type === "string" &&

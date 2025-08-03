@@ -1,6 +1,7 @@
 import { VerifiableCredential, VCProof } from "../../models/vc";
 
 function isVCProof(obj: any): obj is VCProof {
+  if (!obj) return false;
   return (
     obj &&
     typeof obj.type === "string" &&
@@ -13,6 +14,7 @@ function isVCProof(obj: any): obj is VCProof {
 }
 
 export function isVerifiableCredential(obj: any): obj is VerifiableCredential {
+  if (!obj) return false;
   return (
     obj &&
     typeof obj.id === "string" &&

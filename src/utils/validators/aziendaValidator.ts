@@ -1,8 +1,8 @@
 import { Azienda } from "../../models/azienda";
 
 export function isAzienda(obj: any): obj is Azienda {
+  if (!obj) return false; // 👈 Previene errori su null/undefined
   return (
-    obj &&
     typeof obj.id === "string" &&
     typeof obj.name === "string" &&
     typeof obj.seed === "string" &&

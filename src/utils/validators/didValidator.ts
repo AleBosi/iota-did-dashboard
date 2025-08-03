@@ -1,6 +1,7 @@
 import { DidDocument } from "../../models/did";
 
 export function isDidDocument(obj: any): obj is DidDocument {
+  if (!obj) return false;
   return (
     obj &&
     typeof obj.id === "string" &&
