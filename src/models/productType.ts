@@ -1,6 +1,6 @@
+// /models/productType.ts
 export interface ProductType {
-  typeId: string;
+  id: string;               // es: GTIN, oppure UUID univoco
   name: string;
   description?: string;
-  standardCertVCId?: string; // ID della VC di conformità/certificazione tipologia
 }

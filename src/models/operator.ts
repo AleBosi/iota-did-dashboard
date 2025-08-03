@@ -1,7 +1,6 @@
-export interface Operator {
-  operatorId: string;
-  name: string;
-  did: string;
-  role?: string;
-  assignedProducts?: string[]; // lista productId
+// /models/operator.ts
+import { Actor } from "./actor";
+
+export interface Operator extends Actor {
+  // aggiungi campi solo se servono SOLO agli operatori
 }

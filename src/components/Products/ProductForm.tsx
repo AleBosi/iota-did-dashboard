@@ -18,13 +18,13 @@ const ProductForm: React.FC<Props> = ({ parentProduct, onCreate, typeId }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const product: Product = {
-      productId: generateDid(),
+      id: generateDid(),
       typeId: typeId || "",
       did: generateDid(),
       serial,
       owner,
       name,
-      children: [],
+      bom: [],
       credentials: [],
     };
     // Emissione VC prodotto
@@ -35,14 +35,14 @@ const ProductForm: React.FC<Props> = ({ parentProduct, onCreate, typeId }) => {
       product
     );
     product.credentials?.push(vc.id);
-    saveItem(`Product:${product.productId}`, product);
+    saveItem(`Product:${product.id}`, product);
     saveItem(`VC:${vc.id}`, vc);
 
     // Se c'è un parentProduct, aggiungi come figlio e salva il parent aggiornato
     if (parentProduct) {
-      parentProduct.children = parentProduct.children || [];
-      parentProduct.children.push(product);
-      saveItem(`Product:${parentProduct.productId}`, parentProduct);
+      parentProduct.bom = parentProduct.bom || [];
+      parentProduct.bom.push({ id: product.id, name: product.name });
+      saveItem(`Product:${parentProduct.id}`, parentProduct);
     }
 
     onCreate?.(product);

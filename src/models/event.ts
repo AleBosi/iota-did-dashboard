@@ -1,9 +1,12 @@
-export interface ProductEvent {
-  eventId: string;
-  productDid: string;
-  operatorDid: string;
-  eventType: string;
-  date: string;
-  details?: string;
-  vcId?: string; // id della VC che attesta l'evento
+// /models/event.ts
+export interface Event {
+  id: string;
+  productId?: string;         // ID prodotto a cui è collegato
+  bomComponent?: string;      // componente specifico
+  type: string;               // es: "Assemblaggio", "Controllo"
+  description: string;
+  date: string;               // ISO
+  by?: string;                // DID di operatore/macchinario
+  done?: boolean;             // true se eseguito
+  proofId?: string;           // se firmerai evento come VC
 }

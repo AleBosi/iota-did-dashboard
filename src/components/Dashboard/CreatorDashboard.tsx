@@ -1,121 +1,77 @@
 import React, { useState } from "react";
-import { generateDid } from "../../utils/didUtils";
-import { generateSeed } from "../../utils/seedUtils";
-import { saveItem, loadItem } from "../../utils/storageHelpers";
+import { useUser } from "../../contexts/UserContext";
 import { Actor } from "../../models/actor";
+import OperatoreForm from "../Actors/Operatori/OperatoreForm";
+import OperatoreList from "../Actors/Operatori/OperatoreList";
+import MacchinarioForm from "../Actors/Macchinari/MacchinarioForm";
+import MacchinarioList from "../Actors/Macchinari/MacchinarioList";
+import ProductForm from "../Products/ProductForm";
+import ProductList from "../Products/ProductList";
+import EventForm from "../Events/EventForm";
+import EventList from "../Events/EventList";
+import VCCreator from "../VC/VCCreator";
+import VCList from "../VC/VCList";
+import Sidebar from "../Common/Sidebar";
+import Header from "../Common/Header";
 
-export default function CreatorDashboard({ aziendaId }: { aziendaId: string }) {
-  // OPERATORI
-  const [operatori, setOperatori] = useState<Actor[]>(() =>
-    loadItem<Actor[]>(`operatori_${aziendaId}`) || []
-  );
-  const [newOperatoreName, setNewOperatoreName] = useState("");
+export default function CreatorDashboard({ creator }: { creator: Actor }) {
+  const { logout } = useUser();
+  const [operatori, setOperatori] = useState<Actor[]>([]);
+  const [macchinari, setMacchinari] = useState<Actor[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [vcs, setVCs] = useState<any[]>([]);
+  const [selectedTab, setSelectedTab] = useState<"users"|"products"|"events"|"vc">("users");
 
-  // MACCHINARI
-  const [macchinari, setMacchinari] = useState<Actor[]>(() =>
-    loadItem<Actor[]>(`macchinari_${aziendaId}`) || []
-  );
-  const [newMacchinarioName, setNewMacchinarioName] = useState("");
-
-  // CREA OPERATORE
-  const creaOperatore = () => {
-    const operatore: Actor = {
-      id: generateDid(),
-      role: "operatore",
-      name: newOperatoreName,
-      aziendaId,
-      seed: generateSeed(),
-    };
-    const updated = [...operatori, operatore];
-    setOperatori(updated);
-    saveItem(`operatori_${aziendaId}`, updated);
-    setNewOperatoreName("");
-  };
-
-  // CREA MACCHINARIO
-  const creaMacchinario = () => {
-    const macchinario: Actor = {
-      id: generateDid(),
-      role: "macchinario",
-      name: newMacchinarioName,
-      aziendaId,
-      seed: generateSeed(),
-    };
-    const updated = [...macchinari, macchinario];
-    setMacchinari(updated);
-    saveItem(`macchinari_${aziendaId}`, updated);
-    setNewMacchinarioName("");
-  };
+  const handleCreateOperatore = (op: Actor) => setOperatori(prev => [...prev, op]);
+  const handleCreateMacchinario = (m: Actor) => setMacchinari(prev => [...prev, m]);
+  const handleCreateProduct = (p: any) => setProducts(prev => [...prev, p]);
+  const handleCreateEvent = (e: any) => setEvents(prev => [...prev, e]);
+  const handleCreateVC = (vc: any) => setVCs(prev => [...prev, vc]);
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Creator Dashboard</h1>
-
-      <h2 className="font-semibold mb-2">Crea nuovo operatore</h2>
-      <div className="flex gap-2 mb-4">
-        <input
-          placeholder="Nome operatore"
-          value={newOperatoreName}
-          onChange={e => setNewOperatoreName(e.target.value)}
-          className="border px-2 py-1 rounded"
-        />
-        <button
-          onClick={creaOperatore}
-          disabled={!newOperatoreName.trim()}
-          className="bg-blue-500 text-white px-4 py-1 rounded"
-        >
-          Crea
-        </button>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar role="creator" onTabSelect={setSelectedTab} selectedTab={selectedTab} />
+      <div className="flex-1 flex flex-col">
+        <Header user={{ username: creator.name, role: "creator" }} onLogout={logout} />
+        <div className="p-6">
+          {selectedTab === "users" && (
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <h2 className="font-bold mb-2">Operatori</h2>
+                <OperatoreForm onCreate={handleCreateOperatore} />
+                <OperatoreList operatori={operatori} />
+              </div>
+              <div>
+                <h2 className="font-bold mb-2">Macchinari</h2>
+                <MacchinarioForm onCreate={handleCreateMacchinario} />
+                <MacchinarioList macchinari={macchinari} />
+              </div>
+            </div>
+          )}
+          {selectedTab === "products" && (
+            <div>
+              <h2 className="font-bold mb-2">Prodotti</h2>
+              <ProductForm onCreate={handleCreateProduct} />
+              <ProductList products={products} />
+            </div>
+          )}
+          {selectedTab === "events" && (
+            <div>
+              <h2 className="font-bold mb-2">Eventi</h2>
+              <EventForm productId={""} by={creator.id} onCreate={handleCreateEvent} />
+              <EventList events={events} />
+            </div>
+          )}
+          {selectedTab === "vc" && (
+            <div>
+              <h2 className="font-bold mb-2">VC</h2>
+              <VCCreator onCreate={handleCreateVC} />
+              <VCList vcs={vcs} />
+            </div>
+          )}
+        </div>
       </div>
-
-      <h2 className="font-semibold mb-2">Crea nuovo macchinario</h2>
-      <div className="flex gap-2 mb-4">
-        <input
-          placeholder="Nome macchinario"
-          value={newMacchinarioName}
-          onChange={e => setNewMacchinarioName(e.target.value)}
-          className="border px-2 py-1 rounded"
-        />
-        <button
-          onClick={creaMacchinario}
-          disabled={!newMacchinarioName.trim()}
-          className="bg-blue-500 text-white px-4 py-1 rounded"
-        >
-          Crea
-        </button>
-      </div>
-
-      <h2 className="text-lg mt-6 mb-2">Operatori azienda</h2>
-      <UserListWithSeed users={operatori} />
-
-      <h2 className="text-lg mt-6 mb-2">Macchinari azienda</h2>
-      <UserListWithSeed users={macchinari} />
     </div>
-  );
-}
-
-// Componente riutilizzabile per mostrare utenti con seed (come sopra)
-function UserListWithSeed({ users }: { users: Actor[] }) {
-  return (
-    <ul>
-      {users.map(user => (
-        <li key={user.id} className="mb-2 border-b pb-2">
-          <span className="font-semibold">{user.name}</span>
-          <span className="text-xs text-gray-500 ml-2">({user.role})</span>
-          <br />
-          <span className="text-xs text-gray-400">DID: {user.id}</span>
-          <details>
-            <summary className="cursor-pointer text-blue-600">Mostra seed</summary>
-            <code className="block bg-gray-100 px-2 py-1 rounded mb-1">{user.seed}</code>
-            <button
-              className="text-xs bg-blue-200 rounded px-2 py-1"
-              onClick={() => navigator.clipboard.writeText(user.seed)}
-            >
-              Copia
-            </button>
-          </details>
-        </li>
-      ))}
-    </ul>
   );
 }

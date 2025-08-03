@@ -1,9 +1,12 @@
+// /models/product.ts
 export interface Product {
-  productId: string;
-  typeId: string;
-  did: string;
-  serial?: string;
-  owner?: string; // DID azienda
-  children?: Product[]; // struttura BOM (Bill of Materials)
-  credentials?: string[]; // lista ID delle VC associate
+  id: string;              // ID univoco locale/app
+  did: string;             // DID prodotto (es: did:iota:evm:0x...)
+  name: string;            // Nome commerciale o etichetta prodotto
+  typeId?: string;         // riferimento a ProductType.id
+  serial?: string;         // seriale prodotto
+  owner?: string;          // DID del proprietario corrente
+  bom?: { id: string; name: string }[]; // lista componenti (Bill of Materials)
+  credentials?: string[];  // lista di VC associate (ID delle VC)
+  description?: string;    // opzionale
 }

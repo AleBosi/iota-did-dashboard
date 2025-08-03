@@ -1,15 +1,19 @@
+// /models/vc.ts
+
+export interface VCProof {
+  type: string;             // es: "Ed25519Signature2020"
+  created: string;          // ISO date
+  proofPurpose: string;     // es: "assertionMethod"
+  verificationMethod: string; // es: chiave pubblica DID
+  jws: string;              // firma JWS
+  hash: string;             // hash SHA-256 dei dati firmati
+}
+
 export interface VerifiableCredential<T = any> {
-  '@context': string[];
   id: string;
-  type: string[];
-  issuer: string;
-  issuanceDate: string;
-  credentialSubject: T;
-  proof?: {
-    type: string;
-    created: string;
-    proofPurpose: string;
-    verificationMethod: string;
-    jws: string;
-  };
+  type: string[];        // ["VerifiableCredential", ...]
+  issuer: string;        // DID issuer
+  issuanceDate: string;  // ISO date
+  credentialSubject: T;  // dati firmati (es: Product, Event, Actor)
+  proof: VCProof;
 }
