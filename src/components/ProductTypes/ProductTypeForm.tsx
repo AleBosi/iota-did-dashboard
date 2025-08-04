@@ -15,7 +15,7 @@ const ProductTypeForm: React.FC<Props> = ({ onCreate }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newType: ProductType = {
-      typeId: generateDid(), // univoco!
+      id: generateDid(), // usa 'id' come nel modello
       name,
       description,
     };
@@ -26,10 +26,11 @@ const ProductTypeForm: React.FC<Props> = ({ onCreate }) => {
       issuer,
       newType
     );
-    newType.standardCertVCId = vc.id;
+    // Aggiunta proprietà extra con cast
+    (newType as any).standardCertVCId = vc.id;
 
     // Salva su localStorage o passa a parent
-    saveItem(`ProductType:${newType.typeId}`, newType);
+    saveItem(`ProductType:${newType.id}`, newType);
     saveItem(`VC:${vc.id}`, vc);
     onCreate?.(newType);
     setName("");

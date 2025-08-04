@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`AziendaForm matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <form
+    class="flex flex-col gap-2"
+  >
+    <input
+      placeholder="Ragione sociale"
+      required=""
+      value=""
+    />
+    <input
+      placeholder="Partita IVA"
+      value=""
+    />
+    <input
+      placeholder="LEI"
+      value=""
+    />
+    <input
+      placeholder="Indirizzo"
+      value=""
+    />
+    <input
+      placeholder="Email"
+      value=""
+    />
+    <input
+      placeholder="Nazione"
+      value=""
+    />
+    <button
+      class="bg-blue-500 text-white px-4 py-1 rounded"
+      type="submit"
+    >
+      Crea azienda
+    </button>
+  </form>
+</DocumentFragment>
+`;

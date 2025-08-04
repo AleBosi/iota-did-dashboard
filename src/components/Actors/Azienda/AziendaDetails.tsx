@@ -1,4 +1,3 @@
-import React from "react";
 import { Azienda } from "../../../models/azienda";
 
 interface Props {

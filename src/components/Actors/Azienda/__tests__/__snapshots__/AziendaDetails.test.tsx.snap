@@ -1,0 +1,84 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`AziendaDetails matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="border rounded p-4 bg-gray-50 mb-2"
+  >
+    <div>
+      <b>
+        Ragione sociale:
+      </b>
+       Azienda Test
+    </div>
+    <div>
+      <b>
+        DID:
+      </b>
+       did:iota:evm:1234
+    </div>
+    <div>
+      <b>
+        Seed:
+      </b>
+       
+      <code>
+        SEED1234
+      </code>
+    </div>
+    <div>
+      <b>
+        P.IVA:
+      </b>
+       12345678901
+    </div>
+    <div>
+      <b>
+        LEI:
+      </b>
+       LEI123456
+    </div>
+    <div>
+      <b>
+        Indirizzo:
+      </b>
+       Via Roma, 1
+    </div>
+    <div>
+      <b>
+        Email:
+      </b>
+       info@azienda.it
+    </div>
+    <div>
+      <b>
+        Nazione:
+      </b>
+       Italia
+    </div>
+    <div>
+      <b>
+        Creatori:
+      </b>
+       1
+    </div>
+    <div>
+      <b>
+        Operatori:
+      </b>
+       1
+    </div>
+    <div>
+      <b>
+        Macchinari:
+      </b>
+       1
+    </div>
+    <div
+      class="text-xs text-gray-400"
+    >
+      Creato il: 2025-01-01T12:00:00Z
+    </div>
+  </div>
+</DocumentFragment>
+`;

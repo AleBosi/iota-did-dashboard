@@ -1,4 +1,3 @@
-import React from "react";
 import { ProductType } from "../../models/productType";
 
 interface Props {

@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`MacchinarioForm snapshot 1`] = `
+<DocumentFragment>
+  <form
+    class="flex gap-2"
+  >
+    <input
+      class="border px-2 py-1 rounded"
+      placeholder="Nome macchinario"
+      value=""
+    />
+    <button
+      class="bg-blue-500 text-white px-4 py-1 rounded"
+      disabled=""
+      type="submit"
+    >
+      Aggiungi
+    </button>
+  </form>
+</DocumentFragment>
+`;

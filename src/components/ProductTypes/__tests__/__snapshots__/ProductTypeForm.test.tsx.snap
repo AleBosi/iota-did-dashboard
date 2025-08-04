@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ProductTypeForm matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <form>
+    <input
+      placeholder="Nome tipologia"
+      required=""
+      value=""
+    />
+    <input
+      placeholder="Descrizione"
+      value=""
+    />
+    <button
+      type="submit"
+    >
+      Crea tipologia
+    </button>
+  </form>
+</DocumentFragment>
+`;

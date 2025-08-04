@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Actor } from "../../../models/actor";
 
 interface Props {

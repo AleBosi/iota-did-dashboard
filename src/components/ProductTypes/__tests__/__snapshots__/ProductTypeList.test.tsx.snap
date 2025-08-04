@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ProductTypeList matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="flex gap-8"
+  >
+    <ul
+      class="w-1/2"
+    >
+      <li
+        class="mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50"
+      >
+        <span
+          class="font-semibold"
+        >
+          Tipo 1
+        </span>
+        <span
+          class="ml-2 text-gray-400"
+        >
+          Desc 1
+        </span>
+      </li>
+      <li
+        class="mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50"
+      >
+        <span
+          class="font-semibold"
+        >
+          Tipo 2
+        </span>
+      </li>
+    </ul>
+    <div
+      class="w-1/2"
+    />
+  </div>
+</DocumentFragment>
+`;

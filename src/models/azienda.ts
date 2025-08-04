@@ -9,11 +9,11 @@ export interface Azienda {
     address?: string;
     email?: string;
     country?: string;
-    [key: string]: any;   // altri campi liberi (es: phone, codice SDI...)
+    [key: string]: any;   // altri campi liberi
   };
-  creators: string[];     // DID dei creator associati (opzionale, se vuoi ruoli intermedi)
-  operatori: string[];    // DID operatori
-  macchinari: string[];   // DID macchinari
+  creators: string[];     // array di DID
+  operatori: string[];
+  macchinari: string[];
   createdAt?: string;     // ISO
   updatedAt?: string;     // ISO
 }

@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ProductForm matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <form
+    class="flex flex-col gap-2"
+  >
+    <input
+      placeholder="Nome prodotto"
+      required=""
+      value=""
+    />
+    <input
+      placeholder="Seriale"
+      required=""
+      value=""
+    />
+    <input
+      placeholder="Owner DID"
+      value=""
+    />
+    <button
+      type="submit"
+    >
+      Crea prodotto
+    </button>
+  </form>
+</DocumentFragment>
+`;
