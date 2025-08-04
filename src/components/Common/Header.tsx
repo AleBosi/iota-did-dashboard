@@ -1,5 +1,3 @@
-import React from "react";
-
 interface User {
   username: string;
   role: "admin" | "azienda" | "creator" | "operatore" | "macchinario";

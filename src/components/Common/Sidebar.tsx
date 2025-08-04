@@ -1,5 +1,3 @@
-import React from "react";
-
 interface SidebarProps {
   role: "admin" | "azienda" | "creator" | "operatore" | "macchinario";
   selectedTab?: string;

@@ -111,8 +111,11 @@ export default function AddNodeModal({
         {/* Radice: mostra select tipologia, SOTTOcomponenti: mostra solo testo */}
         {!parentTypeId && types && types.length > 0 && (
           <div className="mb-3">
-            <label className="block mb-1 font-semibold">Tipologia prodotto:</label>
+            <label className="block mb-1 font-semibold" htmlFor="type-select"> {/* 👈 fix accessibility */}
+              Tipologia prodotto:
+            </label>
             <select
+              id="type-select"  // 👈 fix accessibility
               className="border rounded px-2 py-1 w-full font-bold"
               value={selectedType}
               onChange={e => setSelectedType(e.target.value)}
@@ -183,6 +186,7 @@ function SortableNode({
   onAddChild: () => void;
   renderChildren: () => React.ReactNode;
 }) {
+  void path; // 👈 Questo elimina l'errore "declared but its value is never read"
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
   const style = {
     transform: CSS.Transform.toString(transform),

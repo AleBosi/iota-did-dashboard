@@ -13,7 +13,11 @@ export default function EventModal({
   onCancel: () => void;
   bom: any[];
 }) {
+  void types; // 👈 Fix TS: prop dichiarata ma non usata
+  void bom;   // 👈 Fix TS: prop dichiarata ma non usata
+
   const [descr, setDescr] = useState("");
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!descr.trim()) return alert("Inserisci una descrizione evento");

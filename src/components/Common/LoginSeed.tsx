@@ -1,5 +1,5 @@
 // /src/components/Common/LoginSeed.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { loadItem } from "../../utils/storageHelpers";
 import { Actor } from "../../models/actor";
 

@@ -1,6 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-type Member = { did: string; name?: string; role?: string };
+type Member = { 
+  did: string; 
+  name?: string; 
+  role?: string; 
+  matricola?: string; // 👈 AGGIUNTA
+};
 
 export default function PermModal({
   nodeIds,
@@ -15,6 +20,8 @@ export default function PermModal({
   onSave: (nodeIds: string[], allowed: string[]) => void;
   onCancel: () => void;
 }) {
+  void bom; // 👈 Questo elimina l'errore "declared but its value is never read"
+
   const [allowed, setAllowed] = useState<string[]>([]);
 
   function handleToggle(did: string) {
@@ -34,24 +41,24 @@ export default function PermModal({
         <h2 className="text-lg font-bold mb-4">Gestisci permessi</h2>
         <div className="mb-4">
           {members.map(m => (
-  <label key={m.did} className="block mb-2">
-    <input
-      type="checkbox"
-      checked={allowed.includes(m.did)}
-      onChange={() => handleToggle(m.did)}
-      className="mr-2"
-    />
-    <span className="font-bold">
-      {m.role === "Macchinario"
-        ? (m.matricola || "(no matricola)")
-        : (m.name || "(senza nome)")}
-    </span>
-    <span className="ml-2 text-xs text-gray-500 font-mono break-all">
-      ({m.did})
-    </span>
-    {m.role && <span className="text-gray-400 text-xs ml-1">({m.role})</span>}
-  </label>
-        ))}
+            <label key={m.did} className="block mb-2">
+              <input
+                type="checkbox"
+                checked={allowed.includes(m.did)}
+                onChange={() => handleToggle(m.did)}
+                className="mr-2"
+              />
+              <span className="font-bold">
+                {m.role === "Macchinario"
+                  ? (m.matricola || "(no matricola)")
+                  : (m.name || "(senza nome)")}
+              </span>
+              <span className="ml-2 text-xs text-gray-500 font-mono break-all">
+                ({m.did})
+              </span>
+              {m.role && <span className="text-gray-400 text-xs ml-1">({m.role})</span>}
+            </label>
+          ))}
         </div>
         <div className="flex gap-3">
           <button type="submit" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-bold">Salva</button>

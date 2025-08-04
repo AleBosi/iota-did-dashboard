@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 
 interface Props {
   label: string;
@@ -45,6 +45,7 @@ export default function ImportExportBox({ label, exportData, onImport }: Props) 
         style={{ display: "none" }}
         ref={fileInputRef}
         onChange={handleImport}
+        data-testid="import-file"
       />
       <button className="bg-gray-300 px-4 py-1 rounded" onClick={() => fileInputRef.current?.click()}>
         Importa {label}
