@@ -29,6 +29,7 @@ export default function AziendaForm({ onCreate }: Props) {
       creators: [],
       operatori: [],
       macchinari: [],
+      vcIds: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

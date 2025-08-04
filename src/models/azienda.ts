@@ -16,4 +16,5 @@ export interface Azienda {
   macchinari: string[];
   createdAt?: string;     // ISO
   updatedAt?: string;     // ISO
+  vcIds?: string[];
 }

@@ -50,6 +50,7 @@ describe("AziendaForm", () => {
       expect(azienda.id).toMatch(/^did:iota:evm:/);
       expect(azienda.seed).toMatch(/^SEED_/);
       expect(Array.isArray(azienda.creators)).toBe(true);
+      expect(Array.isArray(azienda.vcIds)).toBe(true);
     });
   });
 

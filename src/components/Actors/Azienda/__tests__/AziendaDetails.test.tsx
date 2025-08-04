@@ -17,6 +17,7 @@ const sampleAzienda: Azienda = {
   operatori: ["did:iota:op1"],
   macchinari: ["did:iota:mac1"],
   createdAt: "2025-01-01T12:00:00Z",
+  vcIds: [],
 };
 
 describe("AziendaDetails", () => {
