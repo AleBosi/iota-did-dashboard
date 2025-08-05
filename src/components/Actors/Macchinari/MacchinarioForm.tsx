@@ -11,7 +11,18 @@ export default function MacchinarioForm({ onCreate }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onCreate({ name } as Actor);
+
+    // Genera un did temporaneo (puoi sostituire con generateDid() se vuoi)
+    const did = `did:iota:evm:macchinario:${Date.now()}`;
+    const macchinario: Actor = {
+      id: did,
+      did,
+      name: name.trim(),
+      role: "macchinario",
+      vcIds: [],
+    };
+
+    onCreate(macchinario);
     setName("");
   };
 

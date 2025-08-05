@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Actor } from "../../../models/actor";
 import CreatorDetails from "./CreatorDetails";
 
@@ -21,7 +21,8 @@ export default function CreatorList({ creators, onCopySeed }: Props) {
           >
             <span className="font-semibold">{c.name}</span>
             <span className="text-xs text-gray-500 ml-2">({c.role})</span>
-            <span className="text-xs text-gray-400 ml-2">DID: {c.id}</span>
+            <span className="text-xs text-gray-400 ml-2">ID: {c.id}</span>
+            <span className="text-xs text-gray-400 ml-2">DID: {c.did}</span>
             <button
               className="ml-2 text-xs bg-blue-200 rounded px-2 py-1"
               onClick={e => { e.stopPropagation(); onCopySeed?.(c.seed || ""); }}

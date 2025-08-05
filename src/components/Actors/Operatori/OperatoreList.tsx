@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Actor } from "../../../models/actor";
 import OperatoreDetails from "./OperatoreDetails";
 
@@ -21,7 +21,9 @@ export default function OperatoreList({ operatori, onCopySeed }: Props) {
           >
             <span className="font-semibold">{o.name}</span>
             <span className="text-xs text-gray-500 ml-2">({o.role})</span>
-            <span className="text-xs text-gray-400 ml-2">DID: {o.id}</span>
+            <span className="text-xs text-gray-400 ml-2">
+              DID: {o.did || o.id}
+            </span>
             <button
               className="ml-2 text-xs bg-blue-200 rounded px-2 py-1"
               onClick={e => { e.stopPropagation(); onCopySeed?.(o.seed || ""); }}

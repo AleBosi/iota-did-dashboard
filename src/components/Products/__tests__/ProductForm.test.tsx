@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ProductForm from "../ProductForm";
+import { Product } from "../../../models/product";
 
 describe("ProductForm", () => {
   const mockOnCreate = jest.fn();
@@ -26,7 +27,7 @@ describe("ProductForm", () => {
 
   test("submit chiama onCreate con dati corretti e resetta campi", async () => {
     render(<ProductForm onCreate={mockOnCreate} />);
-    fireEvent.change(screen.getByPlaceholderText(/nome prodotto/i), { target: { value: "Prodotto Test" } });
+    fireEvent.change(screen.getByPlaceholderText(/nome prodotto/i), { target: { value: "TipoSmartphone" } });
     fireEvent.change(screen.getByPlaceholderText(/seriale/i), { target: { value: "SN12345" } });
     fireEvent.change(screen.getByPlaceholderText(/owner did/i), { target: { value: "did:iota:evm:owner" } });
 
@@ -35,9 +36,13 @@ describe("ProductForm", () => {
     await waitFor(() => {
       expect(mockOnCreate).toHaveBeenCalledTimes(1);
       const productArg = mockOnCreate.mock.calls[0][0];
-      expect(productArg.name).toBe("Prodotto Test");
+      expect(productArg.typeId).toBe("TipoSmartphone");
       expect(productArg.serial).toBe("SN12345");
       expect(productArg.owner).toBe("did:iota:evm:owner");
+      expect(productArg.productId).toBeDefined();
+      expect(productArg.did).toBeDefined();
+      expect(Array.isArray(productArg.children)).toBe(true);
+      expect(Array.isArray(productArg.credentials)).toBe(true);
     });
 
     expect(screen.getByPlaceholderText(/nome prodotto/i)).toHaveValue("");
@@ -46,11 +51,12 @@ describe("ProductForm", () => {
   });
 
   test("bottone cambia testo se viene passato parentProduct", () => {
-    const parentProduct = { 
-      id: "p1", 
-      did: "did:iota:evm:parent123", 
-      name: "Parent", 
-      bom: [] 
+    const parentProduct: Product = {
+      productId: "prod-parent",
+      typeId: "padre",
+      did: "did:prod:parent",
+      children: [],
+      credentials: [],
     };
     render(<ProductForm parentProduct={parentProduct} onCreate={mockOnCreate} />);
     expect(screen.getByRole("button")).toHaveTextContent(/aggiungi sotto-componente/i);

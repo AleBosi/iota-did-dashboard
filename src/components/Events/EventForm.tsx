@@ -1,67 +1,93 @@
-import React, { useState } from "react";
-import { Event } from "../../models/event";
+import { useState } from "react";
+import { Product } from "../../models/product";
+import { Actor } from "../../models/actor";
 import { generateDid } from "../../utils/didUtils";
 import { issueVC } from "../../utils/vcHelpers";
 import { saveItem } from "../../utils/storageHelpers";
 
 interface Props {
-  prodotti: { id: string; name: string }[];
-  operatori: { id: string; name: string }[];
-  macchinari: { id: string; name: string }[];
-  creatorId: string; // <-- DID del creator (utente loggato)
-  onCreate?: (event: Event) => void;
+  prodotti: Product[];      // productId, typeId, did, serial, owner, credentials, children
+  operatori: Actor[];       // did, name, credentials
+  macchinari: Actor[];      // did, name, credentials
+  creatorDid: string;       // <-- DID del creator (utente loggato)
+  onCreate?: (event: any) => void;
 }
 
 const EventForm: React.FC<Props> = ({
   prodotti,
   operatori,
   macchinari,
-  creatorId,
-  onCreate
+  creatorDid,
+  onCreate,
 }) => {
   const [productId, setProductId] = useState("");
-  const [operatoreId, setOperatoreId] = useState("");
-  const [macchinarioId, setMacchinarioId] = useState("");
+  const [operatoreDid, setOperatoreDid] = useState("");
+  const [macchinarioDid, setMacchinarioDid] = useState("");
   const [type, setType] = useState("");
   const [description, setDescription] = useState("");
   const [bomComponent, setBomComponent] = useState("");
   const [done, setDone] = useState(false);
+  const [vcPreview, setVcPreview] = useState<any | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId || !operatoreId || !macchinarioId || !type) return;
+    if (!productId || !operatoreDid || !macchinarioDid || !type) return;
 
-    const event: Event = {
-      id: generateDid(),
-      productId,
-      operatoreId,
-      macchinarioId,
-      creatorId,
+    // Ricava oggetti completi (non solo ID) per collegare al nuovo evento
+    const prodotto = prodotti.find(p => p.productId === productId);
+    const operatore = operatori.find(o => o.did === operatoreDid);
+    const macchinario = macchinari.find(m => m.did === macchinarioDid);
+
+    if (!prodotto || !operatore || !macchinario) return;
+
+    const eventCore = {
+      eventId: generateDid(),
+      product: {
+        productId: prodotto.productId,
+        did: prodotto.did,
+        serial: prodotto.serial,
+        typeId: prodotto.typeId,
+      },
+      operatore: {
+        did: operatore.did,
+        name: operatore.name,
+      },
+      macchinario: {
+        did: macchinario.did,
+        name: macchinario.name,
+      },
+      creator: creatorDid,
       type,
       description,
       date: new Date().toISOString(),
       done,
       bomComponent: bomComponent || undefined,
-      // proofId, vcIds saranno aggiunti dopo (se necessario)
     };
 
-    // Emissione VC per evento (opzionale ma best practice)
-    const issuer = creatorId;
-    const vc = issueVC<Event>(
+    // Emissione VC centrata sull'evento
+    const vc = issueVC(
       ["VerifiableCredential", "ProductEventCredential"],
-      issuer,
-      event
+      creatorDid,
+      eventCore
     );
-    event.proofId = vc.id;
-    event.vcIds = [vc.id];
-    saveItem(`Event:${event.id}`, event);
+
+    // Event model VC-centric: la VC è collegata direttamente
+    const event = {
+      ...eventCore,
+      vc,                  // collegamento diretto alla VC emessa
+      vcId: vc.id,
+      credentials: [vc],   // possibilità di espandere in futuro
+    };
+
+    saveItem(`Event:${event.eventId}`, event);
     saveItem(`VC:${vc.id}`, vc);
+    setVcPreview(vc);
     onCreate?.(event);
 
-    // Reset campi form
+    // Reset form
     setProductId("");
-    setOperatoreId("");
-    setMacchinarioId("");
+    setOperatoreDid("");
+    setMacchinarioDid("");
     setType("");
     setDescription("");
     setBomComponent("");
@@ -74,21 +100,33 @@ const EventForm: React.FC<Props> = ({
         Prodotto:
         <select value={productId} onChange={e => setProductId(e.target.value)} required>
           <option value="">-- Seleziona prodotto --</option>
-          {prodotti.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {prodotti.map(p => (
+            <option key={p.productId} value={p.productId}>
+              {p.serial} ({p.typeId})
+            </option>
+          ))}
         </select>
       </label>
       <label>
         Operatore:
-        <select value={operatoreId} onChange={e => setOperatoreId(e.target.value)} required>
+        <select value={operatoreDid} onChange={e => setOperatoreDid(e.target.value)} required>
           <option value="">-- Seleziona operatore --</option>
-          {operatori.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+          {operatori.map(o => (
+            <option key={o.did} value={o.did}>
+              {o.name} ({o.did.slice(-6)})
+            </option>
+          ))}
         </select>
       </label>
       <label>
         Macchinario:
-        <select value={macchinarioId} onChange={e => setMacchinarioId(e.target.value)} required>
+        <select value={macchinarioDid} onChange={e => setMacchinarioDid(e.target.value)} required>
           <option value="">-- Seleziona macchinario --</option>
-          {macchinari.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          {macchinari.map(m => (
+            <option key={m.did} value={m.did}>
+              {m.name} ({m.did.slice(-6)})
+            </option>
+          ))}
         </select>
       </label>
       <label>
@@ -130,6 +168,13 @@ const EventForm: React.FC<Props> = ({
       <button type="submit" className="bg-green-600 text-white px-4 py-1 rounded">
         Aggiungi evento
       </button>
+
+      {vcPreview && (
+        <div className="mt-4 p-2 bg-gray-50 rounded-xl border text-xs">
+          <div className="font-bold mb-1">✅ Evento VC emessa:</div>
+          <pre className="overflow-x-auto">{JSON.stringify(vcPreview, null, 2)}</pre>
+        </div>
+      )}
     </form>
   );
 };

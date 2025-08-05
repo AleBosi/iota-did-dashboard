@@ -1,6 +1,7 @@
 // /models/azienda.ts
 export interface Azienda {
   id: string;         // DID (es: did:iota:evm:...)
+  did: string;
   name: string;
   seed: string;       // per login e firma
   legalInfo?: {

@@ -8,6 +8,7 @@ describe("LoginSeed", () => {
   const testSeed = "abc123";
   const fakeUser: Actor = {
     id: "u1",
+    did: "did:example:u1",
     name: "Mario",
     role: "creator",
     aziendaId: aziendaId,
@@ -41,6 +42,7 @@ describe("LoginSeed", () => {
     const fakeOp: Actor = {
       ...fakeUser,
       role: "operatore",
+      did: "did:example:u1-op"
     };
     jest.spyOn(storageHelpers, "loadItem").mockImplementation((key: string) => {
       if (key === `creators_${aziendaId}`) return [];

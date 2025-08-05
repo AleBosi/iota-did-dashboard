@@ -14,7 +14,14 @@ const CreatorDetails: React.FC<Props> = ({ creator }) => {
       <div className="grid gap-2 text-base">
         <div><b>Nome:</b> {creator.name}</div>
         <div><b>Ruolo:</b> {creator.role}</div>
-        <div><b>DID:</b> <span className="text-xs text-gray-500">{creator.id}</span></div>
+        <div>
+          <b>ID:</b>{" "}
+          <span className="text-xs text-gray-500">{creator.id}</span>
+        </div>
+        <div>
+          <b>DID:</b>{" "}
+          <span className="text-xs text-gray-500">{creator.did}</span>
+        </div>
         {creator.seed && (
           <div>
             <b>Seed:</b> <code className="bg-gray-100 rounded px-2">{creator.seed}</code>
@@ -27,7 +34,8 @@ const CreatorDetails: React.FC<Props> = ({ creator }) => {
         )}
         {creator.aziendaId && (
           <div>
-            <b>DID Azienda:</b> <span className="text-xs text-gray-500">{creator.aziendaId}</span>
+            <b>DID Azienda:</b>{" "}
+            <span className="text-xs text-gray-500">{creator.aziendaId}</span>
           </div>
         )}
         {creator.vcIds && (

@@ -17,6 +17,7 @@ export default function AziendaForm({ onCreate }: Props) {
     e.preventDefault();
     const azienda: Azienda = {
       id: "did:iota:evm:" + Date.now(), // replace with generateDid()
+      did: "did:iota:evm:" + Date.now(),
       name,
       seed: "SEED_" + Date.now(),       // replace with generateSeed()
       legalInfo: {

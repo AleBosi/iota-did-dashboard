@@ -48,10 +48,11 @@ describe("AziendaForm", () => {
       expect(azienda.legalInfo.email).toBe("info@test.it");
       expect(azienda.legalInfo.country).toBe("Italia");
       expect(azienda.id).toMatch(/^did:iota:evm:/);
+      expect(azienda.did).toMatch(/^did:iota:evm:/);
       expect(azienda.seed).toMatch(/^SEED_/);
       expect(Array.isArray(azienda.creators)).toBe(true);
       expect(Array.isArray(azienda.vcIds)).toBe(true);
-    });
+          });
   });
 
   test("svuota i campi dopo il submit", async () => {

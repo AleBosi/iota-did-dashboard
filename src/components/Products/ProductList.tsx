@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Product } from "../../models/product";
 import ProductDetails from "./ProductDetails";
 
@@ -15,16 +15,21 @@ export default function ProductList({ products, onSelect }: Props) {
       <ul className="w-1/2">
         {products.map(p => (
           <li
-            key={p.id}
+            key={p.productId}
             className="mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50"
             onClick={() => {
               setSelected(p);
               onSelect?.(p);
             }}
           >
-            <span className="font-semibold">{p.name}</span>
-            {p.typeId && <span className="ml-2 text-gray-400">Tipo: {p.typeId}</span>}
+            <span className="font-semibold">{p.typeId}</span>
             {p.serial && <span className="ml-2 text-gray-400">Seriale: {p.serial}</span>}
+            {/* Badge VC */}
+            {p.credentials && p.credentials.length > 0 && (
+              <span className="ml-2 text-xs bg-green-100 text-green-800 rounded px-2">
+                {p.credentials.length} VC
+              </span>
+            )}
           </li>
         ))}
       </ul>

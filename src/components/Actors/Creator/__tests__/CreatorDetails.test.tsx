@@ -4,8 +4,9 @@ import { Actor } from "../../../../models/actor";
 
 const baseCreator: Actor = {
   id: "did:creator1",
+  did: "did:creator1",
   name: "Mario Rossi",
-  role: "creator", // <-- fix qui
+  role: "creator",
   seed: "seed-value",
   publicKey: "pubkey-value",
   aziendaId: "did:azienda123",
@@ -19,7 +20,8 @@ describe("CreatorDetails", () => {
     render(<CreatorDetails creator={baseCreator} />);
     expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
     expect(screen.getByText("creator")).toBeInTheDocument();
-    expect(screen.getByText("did:creator1")).toBeInTheDocument();
+    // Cambia qui: ora verifica che ci siano DUE elementi con quel testo
+    expect(screen.getAllByText("did:creator1")).toHaveLength(2);
     expect(screen.getByText("seed-value")).toBeInTheDocument();
     expect(screen.getByText("pubkey-value")).toBeInTheDocument();
     expect(screen.getByText("did:azienda123")).toBeInTheDocument();
@@ -28,10 +30,18 @@ describe("CreatorDetails", () => {
   });
 
   it("non esplode se mancano proprietà opzionali", () => {
-    const minimalCreator = { id: "id", name: "Nome", role: "creator" } as Actor; // <-- fix qui
+    const minimalCreator: Actor = {
+      id: "id",
+      did: "id",
+      name: "Nome",
+      role: "creator",
+      vcIds: [],
+    };
     render(<CreatorDetails creator={minimalCreator} />);
     expect(screen.getByText("Nome")).toBeInTheDocument();
     expect(screen.getByText("creator")).toBeInTheDocument();
+    // Cambia qui: ora verifica che ci siano DUE elementi con quel testo
+    expect(screen.getAllByText("id")).toHaveLength(2);
   });
 
   it("non renderizza nulla se creator è null", () => {

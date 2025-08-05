@@ -29,7 +29,7 @@ describe("OperatoreForm", () => {
     expect(button).not.toBeDisabled();
   });
 
-  test("chiama onCreate con il nome inserito e resetta il campo", () => {
+  test("chiama onCreate con tutti i campi Actor (DID-centrico) e resetta il campo", () => {
     render(<OperatoreForm onCreate={mockOnCreate} />);
     const input = screen.getByPlaceholderText(/nome operatore/i);
     const button = screen.getByRole("button", { name: /aggiungi/i });
@@ -38,7 +38,12 @@ describe("OperatoreForm", () => {
     fireEvent.click(button);
 
     expect(mockOnCreate).toHaveBeenCalledTimes(1);
-    expect(mockOnCreate).toHaveBeenCalledWith({ name: "Anna" });
+    const actor = mockOnCreate.mock.calls[0][0];
+    expect(actor.name).toBe("Anna");
+    expect(actor.role).toBe("operatore");
+    expect(actor.id).toMatch(/^did:iota:evm:operatore:/);
+    expect(actor.did).toBe(actor.id);
+
     expect(input).toHaveValue("");
   });
 

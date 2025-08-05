@@ -5,23 +5,25 @@ import { Azienda } from "../../../../models/azienda";
 const aziende: Azienda[] = [
   {
     id: "did:123",
+    did: "did:123",
     name: "ACME Srl",
     legalInfo: { vat: "IT1234567890" },
     seed: "",
     creators: [],
     operatori: [],
     macchinari: [],
-    vcIds: []
+    vcIds: [],
   },
   {
     id: "did:456",
+    did: "did:456",
     name: "Beta SpA",
     legalInfo: { vat: "IT0987654321" },
     seed: "",
     creators: [],
     operatori: [],
     macchinari: [],
-    vcIds: []
+    vcIds: [],
   },
 ];
 

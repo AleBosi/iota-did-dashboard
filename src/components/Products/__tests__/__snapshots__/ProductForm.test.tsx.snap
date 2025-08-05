@@ -3,23 +3,27 @@
 exports[`ProductForm matcha lo snapshot 1`] = `
 <DocumentFragment>
   <form
-    class="flex flex-col gap-2"
+    class="flex flex-col gap-2 mb-4"
   >
     <input
+      class="border px-2 py-1 rounded"
       placeholder="Nome prodotto"
       required=""
       value=""
     />
     <input
+      class="border px-2 py-1 rounded"
       placeholder="Seriale"
       required=""
       value=""
     />
     <input
+      class="border px-2 py-1 rounded"
       placeholder="Owner DID"
       value=""
     />
     <button
+      class="bg-blue-500 text-white px-4 py-1 rounded"
       type="submit"
     >
       Crea prodotto

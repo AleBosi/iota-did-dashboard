@@ -1,76 +1,73 @@
 import React, { useState } from "react";
 import { Product } from "../../models/product";
 import { generateDid } from "../../utils/didUtils";
-import { issueVC } from "../../utils/vcHelpers";
 import { saveItem } from "../../utils/storageHelpers";
 
 interface Props {
-  parentProduct?: Product;  // se fornito, aggiunge come figlio
-  onCreate?: (product: Product) => void;
-  typeId?: string; // opzionale, preimpostata se crei dal tipo
+  parentProduct?: Product; // se fornito, aggiunge come figlio
+  onCreate: (product: Product) => void;
 }
 
-const ProductForm: React.FC<Props> = ({ parentProduct, onCreate, typeId }) => {
+const ProductForm: React.FC<Props> = ({ parentProduct, onCreate }) => {
+  const [typeId, setTypeId] = useState("");
   const [serial, setSerial] = useState("");
   const [owner, setOwner] = useState("");
-  const [name, setName] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!typeId || !serial) return;
+
     const product: Product = {
-      id: generateDid(),
-      typeId: typeId || "",
+      productId: generateDid(),
+      typeId,              // ora funge da nome prodotto
       did: generateDid(),
       serial,
       owner,
-      name,
-      bom: [],
       credentials: [],
+      children: [],
     };
-    // Emissione VC prodotto
-    const issuer = owner || "did:iota:evm:0x...";
-    const vc = issueVC<Product>(
-      ["VerifiableCredential", "ProductCredential"],
-      issuer,
-      product
-    );
-    product.credentials?.push(vc.id);
-    saveItem(`Product:${product.id}`, product);
-    saveItem(`VC:${vc.id}`, vc);
 
-    // Se c'è un parentProduct, aggiungi come figlio e salva il parent aggiornato
+    saveItem(`Product:${product.productId}`, product);
+
+    // Se ha un padre, aggiungi il prodotto come child
     if (parentProduct) {
-      parentProduct.bom = parentProduct.bom || [];
-      parentProduct.bom.push({ id: product.id, name: product.name });
-      saveItem(`Product:${parentProduct.id}`, parentProduct);
+      parentProduct.children = parentProduct.children || [];
+      parentProduct.children.push(product);
+      saveItem(`Product:${parentProduct.productId}`, parentProduct);
     }
 
-    onCreate?.(product);
+    onCreate(product);
+    setTypeId("");
     setSerial("");
     setOwner("");
-    setName("");
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 mb-4">
       <input
         placeholder="Nome prodotto"
-        value={name}
-        onChange={e => setName(e.target.value)}
+        value={typeId}
+        onChange={e => setTypeId(e.target.value)}
         required
+        className="border px-2 py-1 rounded"
       />
       <input
         placeholder="Seriale"
         value={serial}
         onChange={e => setSerial(e.target.value)}
         required
+        className="border px-2 py-1 rounded"
       />
       <input
         placeholder="Owner DID"
         value={owner}
         onChange={e => setOwner(e.target.value)}
+        className="border px-2 py-1 rounded"
       />
-      <button type="submit">
+      <button
+        type="submit"
+        className="bg-blue-500 text-white px-4 py-1 rounded"
+      >
         {parentProduct ? "Aggiungi sotto-componente" : "Crea prodotto"}
       </button>
     </form>

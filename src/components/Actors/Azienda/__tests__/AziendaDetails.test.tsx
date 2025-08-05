@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { Azienda } from "../../../../models/azienda"
+import { Azienda } from "../../../../models/azienda";
 import AziendaDetails from "../AziendaDetails";
 
 const sampleAzienda: Azienda = {
   id: "did:iota:evm:1234",
+  did: "did:iota:evm:1234", // <--- AGGIUNGI QUESTO!
   name: "Azienda Test",
   seed: "SEED1234",
   legalInfo: {
@@ -24,7 +25,6 @@ describe("AziendaDetails", () => {
   test("renderizza correttamente tutti i dati", () => {
     render(<AziendaDetails azienda={sampleAzienda} />);
     
-    // Etichette (nessun errore se ci sono duplicati)
     expect(screen.getAllByText(/ragione sociale:/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/did:/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/seed:/i).length).toBeGreaterThan(0);
@@ -40,7 +40,7 @@ describe("AziendaDetails", () => {
 
     // Valori univoci
     expect(screen.getByText(sampleAzienda.name)).toBeInTheDocument();
-    expect(screen.getByText(sampleAzienda.id)).toBeInTheDocument();
+    expect(screen.getByText(sampleAzienda.did)).toBeInTheDocument();
     expect(screen.getByText(sampleAzienda.seed)).toBeInTheDocument();
     expect(screen.getByText(sampleAzienda.legalInfo!.vat!)).toBeInTheDocument();
     expect(screen.getByText(sampleAzienda.legalInfo!.lei!)).toBeInTheDocument();
@@ -61,6 +61,7 @@ describe("AziendaDetails", () => {
       expect(nodes.length).toBeGreaterThan(0);
     }
   });
+
   test("matcha lo snapshot", () => {
     const { asFragment } = render(<AziendaDetails azienda={sampleAzienda} />);
     expect(asFragment()).toMatchSnapshot();

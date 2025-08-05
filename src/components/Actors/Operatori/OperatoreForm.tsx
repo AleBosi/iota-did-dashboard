@@ -5,13 +5,25 @@ interface Props {
   onCreate: (operatore: Actor) => void;
 }
 
+// Funzione mock per generare un DID coerente (sostituisci con la tua se serve)
+function generateDid(name: string) {
+  return "did:iota:evm:operatore:" + name.trim().toLowerCase().replace(/\s+/g, "-") + "-" + Date.now();
+}
+
 export default function OperatoreForm({ onCreate }: Props) {
   const [name, setName] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onCreate({ name } as Actor);
+    const did = generateDid(name);
+    const actor: Actor = {
+      id: did,
+      did,
+      name: name.trim(),
+      role: "operatore"
+    };
+    onCreate(actor);
     setName("");
   };
 

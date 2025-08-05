@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import MacchinarioForm from "../MacchinarioForm";
+import { Actor } from "../../../../models/actor";
 
 describe("MacchinarioForm", () => {
   const mockOnCreate = jest.fn();
@@ -38,7 +39,14 @@ describe("MacchinarioForm", () => {
     fireEvent.click(button);
 
     expect(mockOnCreate).toHaveBeenCalledTimes(1);
-    expect(mockOnCreate).toHaveBeenCalledWith({ name: "Robot Saldatura" });
+
+    const macchinario: Actor = mockOnCreate.mock.calls[0][0];
+    expect(macchinario.name).toBe("Robot Saldatura");
+    expect(macchinario.role).toBe("macchinario");
+    expect(macchinario.did).toMatch(/^did:iota:evm:macchinario:/);
+    expect(macchinario.id).toBe(macchinario.did);
+    expect(Array.isArray(macchinario.vcIds)).toBe(true);
+
     expect(input).toHaveValue("");
   });
 

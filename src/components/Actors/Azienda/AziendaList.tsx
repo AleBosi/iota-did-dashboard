@@ -1,13 +1,12 @@
-import React from "react";
 import { Azienda } from "../../../models/azienda";
 
 type Props = {
   aziende: Azienda[];
   onSelect?: (azienda: Azienda) => void;
-  onDelete?: (id: string) => void; // opzionale per azioni future
+  onDelete?: (id: string) => void;
 };
 
-const AziendaList: React.FC<Props> = ({ aziende, onSelect, onDelete }) => {
+const AziendaList = ({ aziende, onSelect, onDelete }: Props) => {
   return (
     <div className="bg-white rounded-2xl shadow p-6">
       <h2 className="text-xl font-bold mb-4">Lista Aziende</h2>
@@ -23,14 +22,16 @@ const AziendaList: React.FC<Props> = ({ aziende, onSelect, onDelete }) => {
         <tbody>
           {aziende.length === 0 && (
             <tr>
-              <td colSpan={4} className="text-center py-4 text-gray-500">Nessuna azienda presente</td>
+              <td colSpan={4} className="text-center py-4 text-gray-500">
+                Nessuna azienda presente
+              </td>
             </tr>
           )}
           {aziende.map(az => (
             <tr key={az.id} className="border-t hover:bg-gray-50">
               <td className="py-2 font-semibold">{az.name}</td>
-              <td className="py-2 text-xs text-gray-500">{az.legalInfo?.vat}</td>
-              <td className="py-2 text-xs text-gray-400">{az.id}</td>
+              <td className="py-2 text-xs text-gray-500">{az.legalInfo?.vat || "-"}</td>
+              <td className="py-2 text-xs text-gray-400">{az.did ?? az.id}</td>
               <td className="py-2 flex gap-2">
                 {onSelect && (
                   <button
