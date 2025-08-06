@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`VCViewer component matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="border rounded p-4 bg-gray-50 mb-2"
+  >
+    <div>
+      <b>
+        Subject:
+      </b>
+       did:iota:123
+    </div>
+    <div>
+      <b>
+        Tipo:
+      </b>
+       Compliance
+    </div>
+    <div>
+      <b>
+        Valore:
+      </b>
+       Certificato OK
+    </div>
+    <div>
+      <b>
+        Issuer:
+      </b>
+       did:iota:issuer
+    </div>
+    <div>
+      <b>
+        Emessa il:
+      </b>
+       2025-08-05
+    </div>
+  </div>
+</DocumentFragment>
+`;

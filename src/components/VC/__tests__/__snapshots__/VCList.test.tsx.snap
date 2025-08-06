@@ -1,0 +1,65 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`VCList component matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="flex gap-8"
+  >
+    <ul
+      class="w-1/2"
+    >
+      <li
+        class="mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50"
+      >
+        <span
+          class="font-semibold"
+        >
+          Compliance
+        </span>
+        <span
+          class="ml-2 text-gray-400"
+        >
+          did:iota:issuer1
+        </span>
+        <span
+          class="ml-2 text-xs text-gray-400"
+        >
+          2025-08-01
+        </span>
+        <span
+          class="ml-2 text-xs text-green-600"
+        >
+          valid
+        </span>
+      </li>
+      <li
+        class="mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50"
+      >
+        <span
+          class="font-semibold"
+        >
+          Quality
+        </span>
+        <span
+          class="ml-2 text-gray-400"
+        >
+          did:iota:issuer2
+        </span>
+        <span
+          class="ml-2 text-xs text-gray-400"
+        >
+          2025-08-02
+        </span>
+        <span
+          class="ml-2 text-xs text-red-600"
+        >
+          revoked
+        </span>
+      </li>
+    </ul>
+    <div
+      class="w-1/2"
+    />
+  </div>
+</DocumentFragment>
+`;

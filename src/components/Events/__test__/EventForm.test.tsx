@@ -1,32 +1,45 @@
 import { render, fireEvent, screen, waitFor } from "@testing-library/react";
 import EventForm from "../EventForm";
+import { Actor } from "../../../models/actor";
+import { Product } from "../../../models/product";
+import { Event } from "../../../models/event";
 
-// MOCK PRODUCT/ACTOR/VC
-const mockProduct = {
+const mockProduct: Product = {
   productId: "PRD-001",
   typeId: "TYPE-A",
   did: "did:example:prod111",
   serial: "XYZ123",
   owner: "did:example:company001",
-  credentials: [],
   children: [],
-  } 
+};
 
-const mockOperatore = {
+const mockOperatore: Actor = {
   id: "user222",
   did: "did:example:user222",
   name: "Mario Rossi",
-  role: "operatore", // <-- deve essere esattamente "operatore"
-  credentials: [],
-  } as const;
+  role: "operatore",
+};
 
-const mockMacchinario = {
+const mockMacchinario: Actor = {
   id: "machine333",
   did: "did:example:machine333",
   name: "Linea 1",
-  role: "macchinario", // <-- deve essere esattamente "macchinario"
-  credentials: [],
-  } as const;
+  role: "macchinario",
+};
+
+const mockEventi: Event[] = [
+  {
+    id: "EV-01",
+    type: "avvio",
+    description: "Avvio linea",
+    productId: "PRD-001",
+    operatoreId: "user222",
+    macchinarioId: "machine333",
+    creatorId: "did:example:creator999",
+    date: new Date().toISOString(),
+    done: false,
+  },
+];
 
 describe("EventForm VC-centric", () => {
   it("emette evento e VC, richiama onCreate e resetta i campi", async () => {
@@ -34,8 +47,8 @@ describe("EventForm VC-centric", () => {
     render(
       <EventForm
         prodotti={[mockProduct]}
-        operatori={[mockOperatore]}
-        macchinari={[mockMacchinario]}
+        actors={[mockOperatore, mockMacchinario]}
+        eventi={mockEventi}
         creatorDid="did:example:creator999"
         onCreate={handleCreate}
       />
@@ -45,13 +58,13 @@ describe("EventForm VC-centric", () => {
     fireEvent.change(screen.getByLabelText(/Prodotto/i), {
       target: { value: mockProduct.productId },
     });
-    // Seleziona operatore
-    fireEvent.change(screen.getByLabelText(/Operatore/i), {
-      target: { value: mockOperatore.did },
+    // Seleziona operatore (select manuale)
+    fireEvent.change(screen.getByLabelText(/Operatore \(diretto\)/i), {
+      target: { value: mockOperatore.id },
     });
-    // Seleziona macchinario
-    fireEvent.change(screen.getByLabelText(/Macchinario/i), {
-      target: { value: mockMacchinario.did },
+    // Seleziona macchinario (select manuale)
+    fireEvent.change(screen.getByLabelText(/Macchinario \(diretto\)/i), {
+      target: { value: mockMacchinario.id },
     });
     // Tipo evento
     fireEvent.change(screen.getByPlaceholderText(/Tipo evento/i), {
@@ -80,8 +93,8 @@ describe("EventForm VC-centric", () => {
     // Verifica struttura evento creato
     const event = handleCreate.mock.calls[0][0];
     expect(event.product.productId).toBe(mockProduct.productId);
-    expect(event.operatore.did).toBe(mockOperatore.did);
-    expect(event.macchinario.did).toBe(mockMacchinario.did);
+    expect(event.operatore.name).toBe(mockOperatore.name);
+    expect(event.macchinario.name).toBe(mockMacchinario.name);
     expect(event.type).toBe("Montaggio");
     expect(event.done).toBe(true);
     expect(event.vc).toBeDefined();
@@ -91,5 +104,18 @@ describe("EventForm VC-centric", () => {
     expect(screen.getByPlaceholderText(/Tipo evento/i)).toHaveValue("");
     expect(screen.getByPlaceholderText(/Dettagli/i)).toHaveValue("");
     expect(screen.getByPlaceholderText(/\(opzionale\)/i)).toHaveValue("");
+  });
+
+  it("matcha lo snapshot del form", () => {
+    const { asFragment } = render(
+      <EventForm
+        prodotti={[mockProduct]}
+        actors={[mockOperatore, mockMacchinario]}
+        eventi={mockEventi}
+        creatorDid="did:example:creator999"
+        onCreate={() => {}}
+      />
+    );
+    expect(asFragment()).toMatchSnapshot();
   });
 });

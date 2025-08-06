@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`EventAction component snapshot del componente 1`] = `
+<DocumentFragment>
+  <div
+    class="flex items-center gap-2 my-2"
+  >
+    <span>
+      <b>
+        Produzione
+      </b>
+      : Avvia la macchina per il lotto X
+    </span>
+    <button
+      class="bg-blue-500 text-white px-3 py-1 rounded"
+    >
+      Esegui evento
+    </button>
+  </div>
+</DocumentFragment>
+`;

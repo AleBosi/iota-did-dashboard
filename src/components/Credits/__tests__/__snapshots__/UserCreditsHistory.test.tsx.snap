@@ -1,0 +1,106 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`UserCreditsHistory snapshot 1`] = `
+<DocumentFragment>
+  <div>
+    <div
+      class="text-xs text-blue-600 mb-1"
+      data-testid="main-did"
+    >
+      DID: 
+      <span
+        class="font-mono"
+      >
+        did:iota:azienda-1
+      </span>
+    </div>
+    <h3
+      class="font-semibold mb-2"
+    >
+      Storico movimenti crediti
+    </h3>
+    <ul
+      class="divide-y"
+    >
+      <li
+        class="py-2 flex items-center gap-3"
+      >
+        <span
+          class="font-mono w-20 text-green-600"
+        >
+          +50
+        </span>
+        <span
+          class="text-xs text-gray-500 w-36"
+        >
+          8/5/2025, 2:00:00 PM
+        </span>
+        <span
+          class="text-xs text-gray-400"
+        >
+          da: 
+          <span
+            class="font-mono"
+          >
+            did:iota:admin
+          </span>
+        </span>
+        <span
+          class="text-xs text-gray-400"
+        >
+          a: 
+          <span
+            class="font-mono"
+          >
+            did:iota:azienda-1
+          </span>
+        </span>
+        <span
+          class="ml-2"
+        >
+          Acquisto
+        </span>
+      </li>
+      <li
+        class="py-2 flex items-center gap-3"
+      >
+        <span
+          class="font-mono w-20 text-red-600"
+        >
+          -20
+        </span>
+        <span
+          class="text-xs text-gray-500 w-36"
+        >
+          8/6/2025, 6:00:00 PM
+        </span>
+        <span
+          class="text-xs text-gray-400"
+        >
+          da: 
+          <span
+            class="font-mono"
+          >
+            did:iota:azienda-1
+          </span>
+        </span>
+        <span
+          class="text-xs text-gray-400"
+        >
+          a: 
+          <span
+            class="font-mono"
+          >
+            did:iota:op-7
+          </span>
+        </span>
+        <span
+          class="ml-2"
+        >
+          Assegnazione
+        </span>
+      </li>
+    </ul>
+  </div>
+</DocumentFragment>
+`;

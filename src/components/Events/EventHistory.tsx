@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Event } from "../../models/event";
 import { saveItem, loadItem } from "../../utils/storageHelpers";
 
@@ -10,13 +10,16 @@ export default function EventHistory({ did }: { did: string }) {
   const [type, setType] = useState("generic");
 
   const addEvent = () => {
-    const ev: Event = {
-      id: Date.now().toString(),
-      type,
-      date: new Date().toISOString(),
-      by: did,
-      description,
-      done: false,
+   const ev: Event = {
+   id: Date.now().toString(),
+   type,
+   date: new Date().toISOString(),
+   creatorId: did,
+   description,
+   done: false,
+   productId: "",   
+   operatoreId: "",
+   macchinarioId: ""
     };
     const updated = [...events, ev];
     setEvents(updated);

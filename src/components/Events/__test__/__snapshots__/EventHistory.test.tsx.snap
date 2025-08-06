@@ -1,0 +1,79 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`EventDetails component snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="border rounded p-4 bg-gray-50 mb-2"
+  >
+    <div>
+      <b>
+        ID evento:
+      </b>
+       evt-001
+    </div>
+    <div>
+      <b>
+        Tipo:
+      </b>
+       manutenzione
+    </div>
+    <div>
+      <b>
+        Descrizione:
+      </b>
+       Controllo annuale macchina
+    </div>
+    <div>
+      <b>
+        Prodotto:
+      </b>
+       prod-01
+    </div>
+    <div>
+      <b>
+        Operatore:
+      </b>
+       Mario Operatore 
+      <span
+        class="text-xs text-gray-500"
+      >
+        (did:example:op-11)
+      </span>
+    </div>
+    <div>
+      <b>
+        Macchinario:
+      </b>
+       Linea Robot 
+      <span
+        class="text-xs text-gray-500"
+      >
+        (did:example:mac-22)
+      </span>
+    </div>
+    <div>
+      <b>
+        Creatore (DID):
+      </b>
+       did:creator-xyz
+    </div>
+    <div>
+      <b>
+        Data:
+      </b>
+       8/5/2025, 2:00:00 PM
+    </div>
+    <div>
+      <b>
+        Stato:
+      </b>
+       
+      <span
+        class="text-orange-700"
+      >
+        Da eseguire
+      </span>
+    </div>
+  </div>
+</DocumentFragment>
+`;

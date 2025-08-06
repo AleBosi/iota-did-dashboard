@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`VCCreator component matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <form
+    class="flex flex-col gap-2 mb-4"
+  >
+    <input
+      class="border px-2 py-1 rounded"
+      placeholder="Subject (DID o nome)"
+      value=""
+    />
+    <input
+      class="border px-2 py-1 rounded"
+      placeholder="Tipo credential (es: Abilitazione)"
+      value=""
+    />
+    <input
+      class="border px-2 py-1 rounded"
+      placeholder="Valore/Attributo"
+      value=""
+    />
+    <button
+      class="bg-green-600 text-white px-4 py-1 rounded"
+      disabled=""
+      type="submit"
+    >
+      Crea VC
+    </button>
+  </form>
+</DocumentFragment>
+`;

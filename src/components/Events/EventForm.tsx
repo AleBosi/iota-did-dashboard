@@ -1,42 +1,49 @@
 import { useState } from "react";
 import { Product } from "../../models/product";
 import { Actor } from "../../models/actor";
+import { Event } from "../../models/event";
 import { generateDid } from "../../utils/didUtils";
 import { issueVC } from "../../utils/vcHelpers";
 import { saveItem } from "../../utils/storageHelpers";
+import AssignmentManager from "../Actors/Creator/AssignmentManager";
 
 interface Props {
-  prodotti: Product[];      // productId, typeId, did, serial, owner, credentials, children
-  operatori: Actor[];       // did, name, credentials
-  macchinari: Actor[];      // did, name, credentials
-  creatorDid: string;       // <-- DID del creator (utente loggato)
+  prodotti: Product[];
+  actors: Actor[];
+  eventi: Event[]; // tutti gli eventi già creati (per assignment)
+  creatorDid: string;
   onCreate?: (event: any) => void;
 }
 
 const EventForm: React.FC<Props> = ({
   prodotti,
-  operatori,
-  macchinari,
+  actors,
+  eventi,
   creatorDid,
   onCreate,
 }) => {
   const [productId, setProductId] = useState("");
-  const [operatoreDid, setOperatoreDid] = useState("");
-  const [macchinarioDid, setMacchinarioDid] = useState("");
+  const [operatoreId, setOperatoreId] = useState("");
+  const [macchinarioId, setMacchinarioId] = useState("");
   const [type, setType] = useState("");
   const [description, setDescription] = useState("");
   const [bomComponent, setBomComponent] = useState("");
   const [done, setDone] = useState(false);
   const [vcPreview, setVcPreview] = useState<any | null>(null);
+  const [assignments, setAssignments] = useState<any[]>([]);
+
+  // Gestione assegnazione tramite AssignmentManager
+  const handleAssign = (ass: { eventId: string; operatoreId?: string; macchinarioId?: string }) => {
+    setAssignments(prev => [...prev, ass]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId || !operatoreDid || !macchinarioDid || !type) return;
+    if (!productId || !operatoreId || !macchinarioId || !type) return;
 
-    // Ricava oggetti completi (non solo ID) per collegare al nuovo evento
     const prodotto = prodotti.find(p => p.productId === productId);
-    const operatore = operatori.find(o => o.did === operatoreDid);
-    const macchinario = macchinari.find(m => m.did === macchinarioDid);
+    const operatore = actors.find(a => a.id === operatoreId && a.role === "operatore");
+    const macchinario = actors.find(a => a.id === macchinarioId && a.role === "macchinario");
 
     if (!prodotto || !operatore || !macchinario) return;
 
@@ -71,12 +78,11 @@ const EventForm: React.FC<Props> = ({
       eventCore
     );
 
-    // Event model VC-centric: la VC è collegata direttamente
     const event = {
       ...eventCore,
-      vc,                  // collegamento diretto alla VC emessa
+      vc,
       vcId: vc.id,
-      credentials: [vc],   // possibilità di espandere in futuro
+      credentials: [vc],
     };
 
     saveItem(`Event:${event.eventId}`, event);
@@ -84,10 +90,9 @@ const EventForm: React.FC<Props> = ({
     setVcPreview(vc);
     onCreate?.(event);
 
-    // Reset form
     setProductId("");
-    setOperatoreDid("");
-    setMacchinarioDid("");
+    setOperatoreId("");
+    setMacchinarioId("");
     setType("");
     setDescription("");
     setBomComponent("");
@@ -107,24 +112,31 @@ const EventForm: React.FC<Props> = ({
           ))}
         </select>
       </label>
+      <AssignmentManager
+        eventi={eventi}
+        actors={actors}
+        onAssign={handleAssign}
+        assignments={assignments}
+      />
+      {/* Permetti anche la selezione manuale (per fallback/test) */}
       <label>
-        Operatore:
-        <select value={operatoreDid} onChange={e => setOperatoreDid(e.target.value)} required>
+        Operatore (diretto):
+        <select value={operatoreId} onChange={e => setOperatoreId(e.target.value)}>
           <option value="">-- Seleziona operatore --</option>
-          {operatori.map(o => (
-            <option key={o.did} value={o.did}>
-              {o.name} ({o.did.slice(-6)})
+          {actors.filter(a => a.role === "operatore").map(op => (
+            <option key={op.id} value={op.id}>
+              {op.name} ({op.id})
             </option>
           ))}
         </select>
       </label>
       <label>
-        Macchinario:
-        <select value={macchinarioDid} onChange={e => setMacchinarioDid(e.target.value)} required>
+        Macchinario (diretto):
+        <select value={macchinarioId} onChange={e => setMacchinarioId(e.target.value)}>
           <option value="">-- Seleziona macchinario --</option>
-          {macchinari.map(m => (
-            <option key={m.did} value={m.did}>
-              {m.name} ({m.did.slice(-6)})
+          {actors.filter(a => a.role === "macchinario").map(mac => (
+            <option key={mac.id} value={mac.id}>
+              {mac.name} ({mac.id})
             </option>
           ))}
         </select>
@@ -168,7 +180,6 @@ const EventForm: React.FC<Props> = ({
       <button type="submit" className="bg-green-600 text-white px-4 py-1 rounded">
         Aggiungi evento
       </button>
-
       {vcPreview && (
         <div className="mt-4 p-2 bg-gray-50 rounded-xl border text-xs">
           <div className="font-bold mb-1">✅ Evento VC emessa:</div>

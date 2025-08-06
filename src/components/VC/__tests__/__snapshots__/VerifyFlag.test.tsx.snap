@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`VerifyFlag component matcha lo snapshot 1`] = `
+<DocumentFragment>
+  <span
+    class="ml-2 text-xl text-green-600"
+  >
+    ✅
+  </span>
+</DocumentFragment>
+`;

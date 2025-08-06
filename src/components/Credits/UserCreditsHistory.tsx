@@ -1,56 +1,50 @@
-import React, { useState } from "react";
-
-export interface CreditEvent {
+export interface CreditHistoryItem {
   id: string;
-  date: string;
-  amount: number;
-  type: "add" | "spend";
-  description?: string;
+  date: string; // ISO
+  from?: string; // chi ha assegnato
+  to?: string;   // destinatario
+  qty: number;   // quantità (+/-)
+  reason?: string;
 }
 
 interface Props {
-  history: CreditEvent[];
-  onSelect?: (credit: CreditEvent) => void;
+  history: CreditHistoryItem[];
+  did?: string;
 }
 
-export default function UserCreditsHistory({ history, onSelect }: Props) {
-  const [selected, setSelected] = useState<CreditEvent | null>(null);
-
+export default function UserCreditsHistory({ history, did }: Props) {
   return (
-    <div className="flex gap-8">
-      <ul className="w-1/2">
-        {history.map(h => (
-          <li
-            key={h.id}
-            className={`mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50`}
-            onClick={() => {
-              setSelected(h);
-              onSelect?.(h);
-            }}
-          >
-            <span className="font-semibold">{h.type === "add" ? "+" : "-"}{h.amount}</span>
-            <span className="ml-2">{h.description}</span>
-            <span className="ml-2 text-xs text-gray-400">{h.date}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="w-1/2">
-        {selected && <CreditEventDetails credit={selected} />}
-      </div>
-    </div>
-  );
-}
-
-// CreditEventDetails (interno allo stesso file, se vuoi):
-function CreditEventDetails({ credit }: { credit: CreditEvent }) {
-  if (!credit) return null;
-  return (
-    <div className="border rounded p-4 bg-gray-50 mb-2">
-      <div><b>ID:</b> {credit.id}</div>
-      <div><b>Tipo:</b> {credit.type === "add" ? "Ricarica" : "Spesa"}</div>
-      <div><b>Importo:</b> {credit.amount}</div>
-      <div><b>Data:</b> {credit.date}</div>
-      {credit.description && <div><b>Note:</b> {credit.description}</div>}
+    <div>
+      {did && (
+        <div className="text-xs text-blue-600 mb-1" data-testid="main-did">
+          DID: <span className="font-mono">{did}</span>
+        </div>
+      )}
+      {(!history || history.length === 0) ? (
+        <div className="text-gray-400">Nessun movimento crediti.</div>
+      ) : (
+        <>
+          <h3 className="font-semibold mb-2">Storico movimenti crediti</h3>
+          <ul className="divide-y">
+            {history.map(item => (
+              <li key={item.id} className="py-2 flex items-center gap-3">
+                <span className={`font-mono w-20 ${item.qty > 0 ? "text-green-600" : "text-red-600"}`}>
+                  {item.qty > 0 ? "+" : ""}
+                  {item.qty}
+                </span>
+                <span className="text-xs text-gray-500 w-36">{new Date(item.date).toLocaleString()}</span>
+                {item.from && (
+                  <span className="text-xs text-gray-400">da: <span className="font-mono">{item.from}</span></span>
+                )}
+                {item.to && (
+                  <span className="text-xs text-gray-400">a: <span className="font-mono">{item.to}</span></span>
+                )}
+                {item.reason && <span className="ml-2">{item.reason}</span>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

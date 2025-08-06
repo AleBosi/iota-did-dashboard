@@ -1,0 +1,155 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`EventForm VC-centric matcha lo snapshot del form 1`] = `
+<DocumentFragment>
+  <form
+    class="p-4 bg-white rounded-2xl shadow flex flex-col gap-2"
+  >
+    <label>
+      Prodotto:
+      <select
+        required=""
+      >
+        <option
+          value=""
+        >
+          -- Seleziona prodotto --
+        </option>
+        <option
+          value="PRD-001"
+        >
+          XYZ123 (TYPE-A)
+        </option>
+      </select>
+    </label>
+    <div
+      class="p-4 border rounded bg-gray-50 mb-4"
+    >
+      <h3
+        class="font-semibold mb-2"
+      >
+        Assegna Operatore e Macchinario a un Evento
+      </h3>
+      <div
+        class="flex flex-col gap-3 mb-4"
+      >
+        <select
+          class="border rounded px-2 py-1"
+        >
+          <option
+            value=""
+          >
+            Seleziona Evento
+          </option>
+          <option
+            value="EV-01"
+          >
+            avvio - Avvio linea
+          </option>
+        </select>
+        <select
+          class="border rounded px-2 py-1"
+        >
+          <option
+            value=""
+          >
+            Seleziona Operatore
+          </option>
+          <option
+            value="user222"
+          >
+            Mario Rossi (did:example:user222)
+          </option>
+        </select>
+        <select
+          class="border rounded px-2 py-1"
+        >
+          <option
+            value=""
+          >
+            Seleziona Macchinario
+          </option>
+          <option
+            value="machine333"
+          >
+            Linea 1 (did:example:machine333)
+          </option>
+        </select>
+        <button
+          class="bg-blue-600 text-white px-4 py-1 rounded mt-2"
+          disabled=""
+        >
+          Assegna
+        </button>
+      </div>
+    </div>
+    <label>
+      Operatore (diretto):
+      <select>
+        <option
+          value=""
+        >
+          -- Seleziona operatore --
+        </option>
+        <option
+          value="user222"
+        >
+          Mario Rossi (user222)
+        </option>
+      </select>
+    </label>
+    <label>
+      Macchinario (diretto):
+      <select>
+        <option
+          value=""
+        >
+          -- Seleziona macchinario --
+        </option>
+        <option
+          value="machine333"
+        >
+          Linea 1 (machine333)
+        </option>
+      </select>
+    </label>
+    <label>
+      Tipo evento:
+      <input
+        class="border px-2 py-1 rounded"
+        placeholder="Tipo evento"
+        required=""
+        value=""
+      />
+    </label>
+    <label>
+      Descrizione:
+      <input
+        class="border px-2 py-1 rounded"
+        placeholder="Dettagli"
+        value=""
+      />
+    </label>
+    <label>
+      Componente BOM:
+      <input
+        class="border px-2 py-1 rounded"
+        placeholder="(opzionale)"
+        value=""
+      />
+    </label>
+    <label>
+      Eseguito:
+      <input
+        type="checkbox"
+      />
+    </label>
+    <button
+      class="bg-green-600 text-white px-4 py-1 rounded"
+      type="submit"
+    >
+      Aggiungi evento
+    </button>
+  </form>
+</DocumentFragment>
+`;

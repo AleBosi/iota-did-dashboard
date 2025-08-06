@@ -1,0 +1,85 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`EventList component snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="flex gap-8"
+  >
+    <ul
+      class="w-1/2"
+    >
+      <li
+        class="border-b py-2 cursor-pointer hover:bg-blue-50 "
+      >
+        <span
+          class="font-semibold"
+        >
+          avvio
+        </span>
+        <span
+          class="ml-2"
+        >
+          Avvio macchina A
+        </span>
+        <span
+          class="ml-2 text-xs text-blue-800"
+        >
+          👤 Anna Op
+        </span>
+        <span
+          class="ml-2 text-xs text-purple-800"
+        >
+          🏭 Mac1
+        </span>
+        <span
+          class="ml-2 text-xs text-gray-400"
+        >
+          8/1/2025, 12:00:00 PM
+        </span>
+      </li>
+      <li
+        class="border-b py-2 cursor-pointer hover:bg-blue-50 line-through text-gray-400"
+      >
+        <span
+          class="font-semibold"
+        >
+          manutenzione
+        </span>
+        <span
+          class="ml-2 text-gray-600"
+        >
+          [filtro-aria]
+        </span>
+        <span
+          class="ml-2"
+        >
+          Sostituzione filtro
+        </span>
+        <span
+          class="ml-2 text-xs text-blue-800"
+        >
+          👤 Bob Op
+        </span>
+        <span
+          class="ml-2 text-xs text-purple-800"
+        >
+          🏭 Mac2
+        </span>
+        <span
+          class="ml-2 text-xs text-gray-400"
+        >
+          8/2/2025, 5:30:00 PM
+        </span>
+        <span
+          class="ml-2 text-green-600 font-bold"
+        >
+          ✓
+        </span>
+      </li>
+    </ul>
+    <div
+      class="w-1/2"
+    />
+  </div>
+</DocumentFragment>
+`;
