@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useUser } from "../../contexts/UserContext";
 import { Azienda } from "../../models/azienda";
 import AziendaForm from "../Actors/Azienda/AziendaForm";
 import AziendaList from "../Actors/Azienda/AziendaList";
@@ -9,7 +10,6 @@ import ImportExportBox from "../Common/ImportExportBox";
 import CopyJsonBox from "../Common/CopyJsonBox";
 import Header from "../Common/Header";
 import Sidebar from "../Common/Sidebar";
-import { useUser } from "../../contexts/UserContext";
 import { generateSeed, generateDID } from "../../utils/cryptoUtils";
 
 interface CreditTransaction {

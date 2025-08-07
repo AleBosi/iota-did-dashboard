@@ -5,23 +5,24 @@ import { Product } from "../../models/product";
 import { ProductType } from "../../models/productType";
 import { Event } from "../../models/event";
 import { VerifiableCredential } from "../../models/vc";
-import ProductTypeForm from "../ProductTypes/ProductTypeForm";
 import ProductTypeList from "../ProductTypes/ProductTypeList";
+import ProductTypeForm from "../ProductTypes/ProductTypeForm";
 import ProductTypeDetails from "../ProductTypes/ProductTypeDetails";
 import ProductBOMTree from "../ProductTypes/ProductBOMTree";
 import ProductForm from "../Products/ProductForm";
 import ProductList from "../Products/ProductList";
 import ProductDetails from "../Products/ProductDetails";
-import AssignmentManager from "../Actors/Creator/AssignmentManager";
 import EventForm from "../Events/EventForm";
 import EventList from "../Events/EventList";
 import EventDetails from "../Events/EventDetails";
 import VCCreator from "../VC/VCCreator";
 import VCList from "../VC/VCList";
 import VCViewer from "../VC/VCViewer";
-import VCVerifier from "../VC/VCVerifier";
+import ImportExportBox from "../Common/ImportExportBox";
+import CopyJsonBox from "../Common/CopyJsonBox";
 import Sidebar from "../Common/Sidebar";
 import Header from "../Common/Header";
+import { generateSeed, generateDID } from "../../utils/cryptoUtils";
 
 interface CreatorState {
   productTypes: ProductType[];
