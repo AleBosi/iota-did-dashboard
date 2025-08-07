@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "./contexts/UserContext";
 import { generateDID } from "./utils/cryptoUtils";
 
-// MOCK admin user
 const adminUser = { username: "admin", password: "admin123" };
 
 export default function LoginPage() {
@@ -16,7 +15,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useUser();
 
-  // Login admin (username + password)
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setAdminError("");
@@ -29,7 +27,6 @@ export default function LoginPage() {
     }
   };
 
-  // Login con seed - genera automaticamente DID
   const handleSeedLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setSeedError("");
@@ -39,41 +36,27 @@ export default function LoginPage() {
       return;
     }
 
-    // Genera automaticamente DID dalla seed
     const generatedDID = generateDID();
-    
-    // Crea utente basato su seed e ruolo selezionato
     const userData = {
       id: generatedDID,
       name: `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} ${seed.substring(0, 8)}`,
       seed: seed,
       role: selectedRole,
-      credits: 1000, // Crediti iniziali
+      credits: 1000,
       aziendaId: selectedRole !== "azienda" ? "did:iota:evm:0xACME123" : undefined
     };
 
     login(selectedRole, userData);
     
-    // Naviga alla dashboard appropriata
     switch (selectedRole) {
-      case "azienda":
-        navigate("/azienda");
-        break;
-      case "creator":
-        navigate("/creator");
-        break;
-      case "operatore":
-        navigate("/operatore");
-        break;
-      case "macchinario":
-        navigate("/macchinario");
-        break;
-      default:
-        setSeedError("Ruolo non riconosciuto.");
+      case "azienda": navigate("/azienda"); break;
+      case "creator": navigate("/creator"); break;
+      case "operatore": navigate("/operatore"); break;
+      case "macchinario": navigate("/macchinario"); break;
+      default: setSeedError("Ruolo non riconosciuto.");
     }
   };
 
-  // Genera seed casuale
   const generateRandomSeed = () => {
     const randomSeed = Array.from(crypto.getRandomValues(new Uint8Array(16)))
       .map(b => b.toString(16).padStart(2, '0'))
@@ -82,302 +65,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      backgroundColor: '#f3f4f6', 
-      padding: '24px' 
-    }}>
-      {/* Header */}
-      <div style={{ 
-        textAlign: 'center', 
-        marginBottom: '32px' 
-      }}>
-        <h1 style={{ 
-          fontSize: '48px', 
-          fontWeight: 'bold', 
-          color: '#1f2937', 
-          marginBottom: '8px' 
-        }}>
-          TRUSTUP
-        </h1>
-        <p style={{ 
-          fontSize: '18px', 
-          color: '#6b7280' 
-        }}>
-          IOTA DID Dashboard - Sistema di Identità Decentralizzata
-        </p>
-      </div>
-
-      <div style={{ 
-        width: '100%', 
-        maxWidth: '800px', 
-        backgroundColor: 'white', 
-        borderRadius: '12px', 
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', 
-        padding: '32px',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '32px'
-      }}>
-        
-        {/* Login Admin */}
-        <div style={{ 
-          borderRight: '1px solid #e5e7eb', 
-          paddingRight: '24px' 
-        }}>
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: 'bold', 
-            color: '#1e40af', 
-            marginBottom: '24px',
-            textAlign: 'center'
-          }}>
-            🔐 Login Admin
-          </h2>
-          
-          <form onSubmit={handleAdminLogin} style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '16px' 
-          }}>
-            <input
-              style={{
-                border: '2px solid #d1d5db',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.2s'
-              }}
-              placeholder="Username"
-              value={adminUsername}
-              onChange={e => setAdminUsername(e.target.value)}
-              onFocus={e => e.target.style.borderColor = '#3b82f6'}
-              onBlur={e => e.target.style.borderColor = '#d1d5db'}
-            />
-            
-            <input
-              style={{
-                border: '2px solid #d1d5db',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.2s'
-              }}
-              type="password"
-              placeholder="Password"
-              value={adminPassword}
-              onChange={e => setAdminPassword(e.target.value)}
-              onFocus={e => e.target.style.borderColor = '#3b82f6'}
-              onBlur={e => e.target.style.borderColor = '#d1d5db'}
-            />
-            
-            <button
-              type="submit"
-              style={{
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                borderRadius: '8px',
-                padding: '12px 24px',
-                fontSize: '16px',
-                fontWeight: '600',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseOver={e => e.target.style.backgroundColor = '#2563eb'}
-              onMouseOut={e => e.target.style.backgroundColor = '#3b82f6'}
-            >
-              Accedi come Admin
-            </button>
-            
-            {adminError && (
-              <div style={{ 
-                color: '#dc2626', 
-                fontSize: '14px', 
-                textAlign: 'center',
-                backgroundColor: '#fef2f2',
-                padding: '8px',
-                borderRadius: '6px',
-                border: '1px solid #fecaca'
-              }}>
-                {adminError}
-              </div>
-            )}
-          </form>
-          
-          <div style={{ 
-            marginTop: '16px', 
-            padding: '12px', 
-            backgroundColor: '#eff6ff', 
-            borderRadius: '6px',
-            fontSize: '12px',
-            color: '#1e40af'
-          }}>
-            <strong>Credenziali Demo:</strong><br/>
-            Username: admin<br/>
-            Password: admin123
-          </div>
+    <div className="min-h-screen flex items-center justify-center" style={{ padding: '2rem' }}>
+      <div className="bg-white" style={{ maxWidth: '800px', width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>TRUSTUP</h1>
+          <p>IOTA DID Dashboard - Sistema di Identità Decentralizzata</p>
         </div>
 
-        {/* Login Seed */}
-        <div style={{ paddingLeft: '24px' }}>
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: 'bold', 
-            color: '#059669', 
-            marginBottom: '24px',
-            textAlign: 'center'
-          }}>
-            🌱 Login tramite Seed
-          </h2>
-          
-          <form onSubmit={handleSeedLogin} style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '16px' 
-          }}>
-            {/* Selezione Ruolo */}
-            <div>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '14px', 
-                fontWeight: '600', 
-                color: '#374151', 
-                marginBottom: '8px' 
-              }}>
-                Seleziona Ruolo:
-              </label>
-              <select
-                value={selectedRole}
-                onChange={e => setSelectedRole(e.target.value as any)}
-                style={{
-                  width: '100%',
-                  border: '2px solid #d1d5db',
-                  borderRadius: '8px',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  backgroundColor: 'white'
-                }}
-              >
-                <option value="azienda">🏢 Azienda</option>
-                <option value="creator">👨‍💼 Creator</option>
-                <option value="operatore">👷‍♂️ Operatore</option>
-                <option value="macchinario">🤖 Macchinario</option>
-              </select>
-            </div>
-
-            {/* Input Seed */}
-            <div>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '14px', 
-                fontWeight: '600', 
-                color: '#374151', 
-                marginBottom: '8px' 
-              }}>
-                Seed Crittografico:
-              </label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          {/* Login Admin */}
+          <div>
+            <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>🔐 Login Admin</h2>
+            <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <input
-                style={{
-                  width: '100%',
-                  border: '2px solid #d1d5db',
-                  borderRadius: '8px',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  fontFamily: 'monospace'
-                }}
-                placeholder="Inserisci o genera una seed..."
-                value={seed}
-                onChange={e => setSeed(e.target.value)}
-                onFocus={e => e.target.style.borderColor = '#10b981'}
-                onBlur={e => e.target.style.borderColor = '#d1d5db'}
+                placeholder="Username"
+                value={adminUsername}
+                onChange={e => setAdminUsername(e.target.value)}
               />
+              <input
+                type="password"
+                placeholder="Password"
+                value={adminPassword}
+                onChange={e => setAdminPassword(e.target.value)}
+              />
+              <button type="submit">Accedi come Admin</button>
+              {adminError && <div style={{ color: 'red', fontSize: '0.875rem' }}>{adminError}</div>}
+            </form>
+            <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', fontSize: '0.75rem' }}>
+              <strong>Demo:</strong> admin / admin123
             </div>
+          </div>
 
-            {/* Bottoni */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={generateRandomSeed}
-                style={{
-                  flex: '1',
-                  backgroundColor: '#6b7280',
-                  color: 'white',
-                  borderRadius: '8px',
-                  padding: '10px 16px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                🎲 Genera Seed
-              </button>
-              
-              <button
-                type="submit"
-                style={{
-                  flex: '2',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-                onMouseOver={e => e.target.style.backgroundColor = '#059669'}
-                onMouseOut={e => e.target.style.backgroundColor = '#10b981'}
-              >
-                🚀 Accedi
-              </button>
-            </div>
-            
-            {seedError && (
-              <div style={{ 
-                color: '#dc2626', 
-                fontSize: '14px', 
-                textAlign: 'center',
-                backgroundColor: '#fef2f2',
-                padding: '8px',
-                borderRadius: '6px',
-                border: '1px solid #fecaca'
-              }}>
-                {seedError}
+          {/* Login Seed */}
+          <div>
+            <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>🌱 Login tramite Seed</h2>
+            <form onSubmit={handleSeedLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Ruolo:</label>
+                <select value={selectedRole} onChange={e => setSelectedRole(e.target.value as any)}>
+                  <option value="azienda">🏢 Azienda</option>
+                  <option value="creator">👨‍💼 Creator</option>
+                  <option value="operatore">👷‍♂️ Operatore</option>
+                  <option value="macchinario">🤖 Macchinario</option>
+                </select>
               </div>
-            )}
-          </form>
-          
-          <div style={{ 
-            marginTop: '16px', 
-            padding: '12px', 
-            backgroundColor: '#f0fdf4', 
-            borderRadius: '6px',
-            fontSize: '12px',
-            color: '#166534'
-          }}>
-            <strong>Info:</strong> Inserisci qualsiasi seed per generare automaticamente un DID IOTA e accedere alla dashboard del ruolo selezionato.
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Seed:</label>
+                <input
+                  placeholder="Inserisci o genera una seed..."
+                  value={seed}
+                  onChange={e => setSeed(e.target.value)}
+                  style={{ fontFamily: 'monospace' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="button" onClick={generateRandomSeed} style={{ flex: '1' }}>🎲 Genera</button>
+                <button type="submit" style={{ flex: '2' }}>🚀 Accedi</button>
+              </div>
+              {seedError && <div style={{ color: 'red', fontSize: '0.875rem' }}>{seedError}</div>}
+            </form>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{ 
-        marginTop: '32px', 
-        textAlign: 'center', 
-        fontSize: '12px', 
-        color: '#9ca3af' 
-      }}>
-        Powered by IOTA DPP • Sistema di Identità Digitale Decentralizzata
       </div>
     </div>
   );
