@@ -98,53 +98,84 @@ export default function AdminDashboard() {
       id: Date.now().toString(),
       date: new Date().toISOString(),
       amount: 0,
-      type: "receive",
-      description: `Azienda ${newAzienda.name} creata`,
+      type: "give",
+      description: `Azienda creata: ${newAzienda.name}`,
       aziendaId: newAzienda.id,
       aziendaName: newAzienda.name
     };
-    setCreditHistory(prev => [...prev, transaction]);
+    setCreditHistory(prev => [transaction, ...prev]);
   };
 
-  // Gestione erogazione crediti
-  const handleGiveCredits = () => {
-    if (!selectedAziendaForCredits || creditsToGive <= 0 || creditsToGive > systemCredits) {
+  // Gestione aggiornamento azienda
+  const handleUpdateAzienda = (updatedAzienda: Azienda) => {
+    setAziende(prev => prev.map(a => a.id === updatedAzienda.id ? updatedAzienda : a));
+    setSelectedAzienda(null);
+  };
+
+  // Gestione eliminazione azienda
+  const handleDeleteAzienda = (aziendaId: string) => {
+    const azienda = aziende.find(a => a.id === aziendaId);
+    if (azienda && window.confirm(`Sei sicuro di voler eliminare l'azienda ${azienda.name}?`)) {
+      setAziende(prev => prev.filter(a => a.id !== aziendaId));
+      setSelectedAzienda(null);
+      
+      // Aggiungi transazione di eliminazione
+      const transaction: CreditTransaction = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        amount: 0,
+        type: "give",
+        description: `Azienda eliminata: ${azienda.name}`,
+        aziendaId: azienda.id,
+        aziendaName: azienda.name
+      };
+      setCreditHistory(prev => [transaction, ...prev]);
+    }
+  };
+
+  // Gestione invio crediti
+  const handleSendCredits = () => {
+    if (!selectedAziendaForCredits || creditsToGive <= 0) {
       alert("Seleziona un'azienda e inserisci un importo valido");
+      return;
+    }
+
+    if (creditsToGive > systemCredits) {
+      alert("Crediti insufficienti nel sistema");
       return;
     }
 
     const azienda = aziende.find(a => a.id === selectedAziendaForCredits);
     if (!azienda) return;
 
+    // Aggiorna crediti azienda
+    const updatedAzienda = { ...azienda, credits: (azienda.credits || 0) + creditsToGive };
+    setAziende(prev => prev.map(a => a.id === selectedAziendaForCredits ? updatedAzienda : a));
+    
     // Aggiorna crediti sistema
     setSystemCredits(prev => prev - creditsToGive);
     
-    // Aggiorna crediti azienda
-    setAziende(prev => prev.map(a => 
-      a.id === selectedAziendaForCredits 
-        ? { ...a, credits: (a.credits || 0) + creditsToGive }
-        : a
-    ));
-
     // Aggiungi transazione
     const transaction: CreditTransaction = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
       amount: creditsToGive,
       type: "give",
-      description: `Crediti erogati a ${azienda.name}`,
+      description: `Crediti inviati a ${azienda.name}`,
       aziendaId: azienda.id,
       aziendaName: azienda.name
     };
-    setCreditHistory(prev => [...prev, transaction]);
-
+    setCreditHistory(prev => [transaction, ...prev]);
+    
     // Reset form
     setCreditsToGive(0);
     setSelectedAziendaForCredits("");
+    
+    alert(`${creditsToGive} crediti inviati a ${azienda.name}`);
   };
 
-  // Gestione ricarica crediti sistema
-  const handleRechargeSystemCredits = () => {
+  // Gestione ricarica sistema
+  const handleRechargeSystem = () => {
     if (rechargeAmount <= 0) {
       alert("Inserisci un importo valido");
       return;
@@ -157,22 +188,24 @@ export default function AdminDashboard() {
       date: new Date().toISOString(),
       amount: rechargeAmount,
       type: "recharge",
-      description: `Ricarica crediti sistema`
+      description: `Ricarica sistema: +${rechargeAmount} crediti`
     };
-    setCreditHistory(prev => [...prev, transaction]);
+    setCreditHistory(prev => [transaction, ...prev]);
+    
     setRechargeAmount(0);
+    alert(`Sistema ricaricato con ${rechargeAmount} crediti`);
   };
 
-  // Gestione export dati
+  // Gestione backup
   const handleExportData = () => {
-    const exportData: AdminState = {
+    const dataToExport: AdminState = {
       aziende,
       systemCredits,
       creditHistory,
       totalSystemMovements: creditHistory.length
     };
     
-    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataStr = JSON.stringify(dataToExport, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
@@ -182,233 +215,276 @@ export default function AdminDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  // Gestione import dati
-  const handleImportData = (jsonData: any) => {
-    try {
-      if (jsonData.aziende) setAziende(jsonData.aziende);
-      if (jsonData.systemCredits !== undefined) setSystemCredits(jsonData.systemCredits);
-      if (jsonData.creditHistory) setCreditHistory(jsonData.creditHistory);
-      alert("Dati importati con successo!");
-    } catch (error) {
-      alert("Errore nell'importazione dei dati");
-      console.error(error);
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData: AdminState = JSON.parse(e.target?.result as string);
+        setBackupData(importedData);
+      } catch (error) {
+        alert('Errore nel caricamento del file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleRestoreData = () => {
+    if (!backupData) return;
+    
+    if (window.confirm('Sei sicuro di voler ripristinare i dati? Tutti i dati attuali verranno sovrascritti.')) {
+      setAziende(backupData.aziende || []);
+      setSystemCredits(backupData.systemCredits || 50000);
+      setCreditHistory(backupData.creditHistory || []);
+      setBackupData(null);
+      alert('Dati ripristinati con successo');
     }
   };
 
-  // Render tab aziende
-  const renderAziendeTab = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Gestione Aziende</h2>
-        <button
-          onClick={() => setShowAziendaForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Crea Nuova Azienda
-        </button>
-      </div>
-
-      {showAziendaForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium">Nuova Azienda</h3>
-            <button
-              onClick={() => setShowAziendaForm(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
-          </div>
-          <AziendaForm onCreate={handleCreateAzienda} />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium mb-4">Lista Aziende ({aziende.length})</h3>
-          <AziendaList aziende={aziende} onSelect={setSelectedAzienda} />
-        </div>
-
-        {selectedAzienda && (
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg font-medium mb-4">Dettagli Azienda</h3>
-            <AziendaDetails azienda={selectedAzienda} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Render tab crediti
-  const renderCreditiTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Gestione Crediti Sistema</h2>
-      
-      {/* Saldo sistema */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium mb-4">Saldo Sistema</h3>
-        <CreditsDashboard 
-          credits={systemCredits} 
-          onBuyCredits={() => {}} 
-        />
-        
-        <div className="mt-4 flex items-center gap-4">
-          <input
-            type="number"
-            value={rechargeAmount}
-            onChange={(e) => setRechargeAmount(Number(e.target.value))}
-            placeholder="Importo ricarica"
-            className="border border-gray-300 px-3 py-2 rounded-lg"
-            min="1"
-          />
-          <button
-            onClick={handleRechargeSystemCredits}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-          >
-            Ricarica Sistema
-          </button>
-        </div>
-      </div>
-
-      {/* Erogazione crediti */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium mb-4">Eroga Crediti ad Aziende</h3>
-        <div className="flex items-center gap-4 mb-4">
-          <select
-            value={selectedAziendaForCredits}
-            onChange={(e) => setSelectedAziendaForCredits(e.target.value)}
-            className="border border-gray-300 px-3 py-2 rounded-lg flex-1"
-          >
-            <option value="">Seleziona azienda</option>
-            {aziende.map(a => (
-              <option key={a.id} value={a.id}>
-                {a.name} (Crediti: {a.credits || 0})
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            value={creditsToGive}
-            onChange={(e) => setCreditsToGive(Number(e.target.value))}
-            placeholder="Crediti da erogare"
-            className="border border-gray-300 px-3 py-2 rounded-lg"
-            min="1"
-            max={systemCredits}
-          />
-          <button
-            onClick={handleGiveCredits}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            disabled={!selectedAziendaForCredits || creditsToGive <= 0}
-          >
-            Eroga
-          </button>
-        </div>
-      </div>
-
-      {/* Storico movimenti */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium mb-4">Storico Movimenti</h3>
-        <UserCreditsHistory history={creditHistory} />
-      </div>
-    </div>
-  );
-
-  // Render tab backup
-  const renderBackupTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Backup e Restore Sistema</h2>
-      
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium mb-4">Export/Import Dati</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <button
-              onClick={handleExportData}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 mr-4"
-            >
-              Esporta Tutti i Dati
-            </button>
-            <span className="text-sm text-gray-600">
-              Esporta aziende, crediti e movimenti in formato JSON
-            </span>
-          </div>
-
-          <ImportExportBox 
-            label="Importa Backup Sistema" 
-            onImport={handleImportData} 
-            exportData={{
-              aziende,
-              systemCredits,
-              creditHistory,
-              totalSystemMovements: creditHistory.length
-            }} 
-          />
-
-          <CopyJsonBox 
-            label="Visualizza Dati JSON" 
-            json={{
-              aziende: aziende.length,
-              systemCredits,
-              totalMovements: creditHistory.length,
-              lastUpdate: new Date().toISOString()
-            }} 
-          />
-        </div>
-      </div>
-    </div>
-  );
+  const sidebarItems = [
+    { id: "aziende", label: "Aziende", icon: "🏢" },
+    { id: "crediti", label: "Crediti sistema", icon: "💰" },
+    { id: "backup", label: "Import/Export", icon: "📁" }
+  ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar role="admin" />
+    <div className="min-h-screen flex">
+      <Sidebar
+        title="DPP IOTA"
+        subtitle={`Admin ${session?.username || 'Sistema'}`}
+        items={sidebarItems}
+        activeItem={activeTab}
+        onItemClick={(id) => setActiveTab(id as any)}
+        onLogout={logout}
+      />
+      
       <div className="flex-1 flex flex-col">
         <Header 
-          user={{ 
-            username: session.data?.name || "Admin", 
-            role: "admin" 
-          }} 
-          onLogout={logout} 
+          title="Dashboard Admin"
+          subtitle="Gestione completa del sistema IOTA DID"
         />
         
-        <div className="flex-1 p-6">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Amministratore</h1>
-            <p className="text-gray-600">Gestione completa del sistema IOTA DID</p>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="mb-6">
-            <nav className="flex space-x-8">
-              {[
-                { id: "aziende", label: "Gestione Aziende" },
-                { id: "crediti", label: "Crediti Sistema" },
-                { id: "backup", label: "Backup & Restore" }
-              ].map((tab) => (
+        <main className="flex-1 p-6">
+          {activeTab === "aziende" && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Gestione Aziende</h2>
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                  onClick={() => setShowAziendaForm(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                 >
-                  {tab.label}
+                  + Nuova Azienda
                 </button>
-              ))}
-            </nav>
-          </div>
+              </div>
 
-          {/* Tab Content */}
-          <div className="flex-1">
-            {activeTab === "aziende" && renderAziendeTab()}
-            {activeTab === "crediti" && renderCreditiTab()}
-            {activeTab === "backup" && renderBackupTab()}
-          </div>
-        </div>
+              {showAziendaForm && (
+                <div className="bg-white p-6 rounded-lg shadow mb-6">
+                  <h3 className="text-xl font-semibold mb-4">Crea Nuova Azienda</h3>
+                  <AziendaForm
+                    onSubmit={handleCreateAzienda}
+                    onCancel={() => setShowAziendaForm(false)}
+                  />
+                </div>
+              )}
+
+              {selectedAzienda ? (
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold">Dettagli Azienda</h3>
+                    <button
+                      onClick={() => setSelectedAzienda(null)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ✕ Chiudi
+                    </button>
+                  </div>
+                  <AziendaDetails
+                    azienda={selectedAzienda}
+                    onUpdate={handleUpdateAzienda}
+                    onDelete={() => handleDeleteAzienda(selectedAzienda.id)}
+                  />
+                </div>
+              ) : (
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-semibold mb-4">Lista Aziende ({aziende.length})</h3>
+                  <AziendaList
+                    aziende={aziende}
+                    onSelect={setSelectedAzienda}
+                    onDelete={handleDeleteAzienda}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "crediti" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Gestione Crediti Sistema</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Stato Sistema */}
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-semibold mb-4">Stato Sistema</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Crediti Disponibili:</span>
+                      <span className="font-bold text-green-600">{systemCredits.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Aziende Registrate:</span>
+                      <span className="font-bold">{aziende.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Transazioni Totali:</span>
+                      <span className="font-bold">{creditHistory.length}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-2">Ricarica Sistema</h4>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={rechargeAmount}
+                        onChange={(e) => setRechargeAmount(Number(e.target.value))}
+                        placeholder="Importo"
+                        className="flex-1 p-2 border rounded"
+                      />
+                      <button
+                        onClick={handleRechargeSystem}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                      >
+                        Ricarica
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Invio Crediti */}
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-semibold mb-4">Invia Crediti</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Azienda:</label>
+                      <select
+                        value={selectedAziendaForCredits}
+                        onChange={(e) => setSelectedAziendaForCredits(e.target.value)}
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="">Seleziona azienda...</option>
+                        {aziende.map(azienda => (
+                          <option key={azienda.id} value={azienda.id}>
+                            {azienda.name} (Crediti: {azienda.credits || 0})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Importo:</label>
+                      <input
+                        type="number"
+                        value={creditsToGive}
+                        onChange={(e) => setCreditsToGive(Number(e.target.value))}
+                        placeholder="Crediti da inviare"
+                        className="w-full p-2 border rounded"
+                      />
+                    </div>
+                    <button
+                      onClick={handleSendCredits}
+                      className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                    >
+                      Invia Crediti
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Storico Transazioni */}
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-xl font-semibold mb-4">Storico Transazioni</h3>
+                <UserCreditsHistory transactions={creditHistory} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "backup" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Import/Export Dati</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Export */}
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-semibold mb-4">Esporta Dati</h3>
+                  <p className="text-gray-600 mb-4">
+                    Scarica un backup completo di tutti i dati del sistema.
+                  </p>
+                  <button
+                    onClick={handleExportData}
+                    className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+                  >
+                    📁 Esporta Backup
+                  </button>
+                </div>
+
+                {/* Import */}
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-semibold mb-4">Importa Dati</h3>
+                  <p className="text-gray-600 mb-4">
+                    Carica un file di backup per ripristinare i dati.
+                  </p>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportData}
+                    className="w-full mb-4 p-2 border rounded"
+                  />
+                  {backupData && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                      <p className="text-sm">
+                        File caricato: {backupData.aziende?.length || 0} aziende, 
+                        {backupData.creditHistory?.length || 0} transazioni
+                      </p>
+                      <button
+                        onClick={handleRestoreData}
+                        className="mt-2 bg-yellow-600 text-white px-4 py-1 rounded text-sm hover:bg-yellow-700"
+                      >
+                        Ripristina Dati
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Statistiche Sistema */}
+              <div className="mt-6 bg-white p-6 rounded-lg shadow">
+                <h3 className="text-xl font-semibold mb-4">Statistiche Sistema</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{aziende.length}</div>
+                    <div className="text-sm text-gray-600">Aziende</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{systemCredits.toLocaleString()}</div>
+                    <div className="text-sm text-gray-600">Crediti Sistema</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">{creditHistory.length}</div>
+                    <div className="text-sm text-gray-600">Transazioni</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {aziende.reduce((sum, a) => sum + (a.credits || 0), 0).toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-600">Crediti Distribuiti</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
 }
-
