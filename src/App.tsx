@@ -8,14 +8,10 @@ import CreatorDashboard from "./components/Dashboard/CreatorDashboard";
 import OperatorDashboard from "./components/Dashboard/OperatorDashboard";
 import MacchinarioDashboard from "./components/Dashboard/MacchinarioDashboard";
 
-// Protected route wrapper
 function ProtectedRoute({
   children,
   allowed
-}: {
-  children: React.ReactNode;
-  allowed: string[];
-}) {
+}: { children: React.ReactNode; allowed: string[] }) {
   const { session } = useUser();
   if (!session?.role || !allowed.includes(session.role)) {
     return <Navigate to="/" replace />;
@@ -25,66 +21,56 @@ function ProtectedRoute({
 
 export default function App() {
   const { session } = useUser();
-
   return (
-    <>
-      <Routes>
-        {/* Homepage = Login universale */}
-        <Route path="/" element={<LoginPage />} />
+    <Routes>
+      <Route path="/" element={<LoginPage />} />
 
-        {/* Admin dashboard */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowed={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowed={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Azienda dashboard */}
-        <Route
-          path="/azienda"
-          element={
-            <ProtectedRoute allowed={["azienda"]}>
-              <AziendaDashboard azienda={session?.data} />
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/azienda"
+        element={
+          <ProtectedRoute allowed={["azienda"]}>
+            <AziendaDashboard azienda={session?.data} />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Creator dashboard */}
-        <Route
-          path="/creator"
-          element={
-            <ProtectedRoute allowed={["creator"]}>
-              <CreatorDashboard creator={session?.data} />
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/creator"
+        element={
+          <ProtectedRoute allowed={["creator"]}>
+            <CreatorDashboard creator={session?.data} />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Operatore dashboard */}
-        <Route
-          path="/operatore"
-          element={
-            <ProtectedRoute allowed={["operatore"]}>
-              <OperatorDashboard operatore={session?.data} />
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/operatore"
+        element={
+          <ProtectedRoute allowed={["operatore"]}>
+            <OperatorDashboard operatore={session?.data} />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Macchinario dashboard */}
-        <Route
-          path="/macchinario"
-          element={
-            <ProtectedRoute allowed={["macchinario"]}>
-              <MacchinarioDashboard macchinario={session?.data} />
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/macchinario"
+        element={
+          <ProtectedRoute allowed={["macchinario"]}>
+            <MacchinarioDashboard macchinario={session?.data} />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

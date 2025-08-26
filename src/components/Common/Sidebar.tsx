@@ -1,72 +1,34 @@
-import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useUser } from "../../contexts/UserContext";
 
-interface SidebarItem {
-  id: string;
-  label: string;
-  icon?: string;
-}
+const itemsByRole: Record<string, { to: string; label: string }[]> = {
+  admin: [{ to: "/admin", label: "Dashboard" }],
+  azienda: [{ to: "/azienda", label: "Dashboard" }],
+  creator: [{ to: "/creator", label: "Dashboard" }],
+  operatore: [{ to: "/operatore", label: "Dashboard" }],
+  macchinario: [{ to: "/macchinario", label: "Dashboard" }]
+};
 
-interface SidebarProps {
-  title: string;
-  subtitle?: string;
-  items: SidebarItem[];
-  activeItem?: string;
-  onItemClick?: (id: string) => void;
-  onLogout?: () => void;
-}
+export default function Sidebar() {
+  const { session } = useUser();
+  const role = session?.role || "admin";
+  const items = itemsByRole[role] || [];
+  const loc = useLocation();
 
-export default function Sidebar({ 
-  title, 
-  subtitle, 
-  items, 
-  activeItem, 
-  onItemClick, 
-  onLogout 
-}: SidebarProps) {
   return (
-    <div className="w-64 h-screen bg-gray-800 text-white flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-xl font-bold text-white">{title}</h2>
-        {subtitle && (
-          <p className="text-sm text-gray-300 mt-1">{subtitle}</p>
-        )}
-      </div>
-
-      {/* Navigation Items */}
-      <nav className="flex-1 py-4">
-        <ul className="space-y-1">
-          {items.map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => onItemClick?.(item.id)}
-                className={`w-full text-left px-4 py-3 flex items-center space-x-3 transition-colors ${
-                  activeItem === item.id
-                    ? "bg-blue-600 text-white border-r-4 border-blue-400"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
-                }`}
-              >
-                {item.icon && (
-                  <span className="text-lg">{item.icon}</span>
-                )}
-                <span className="font-medium">{item.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Logout Button */}
-      {onLogout && (
-        <div className="p-4 border-t border-gray-700">
-          <button
-            onClick={onLogout}
-            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+    <aside className="w-64 bg-white border-r h-screen p-4">
+      <div className="font-bold mb-4">TRUSTUP</div>
+      <nav className="space-y-2">
+        {items.map((it) => (
+          <Link
+            key={it.to}
+            to={it.to}
+            className={`block px-3 py-2 rounded ${loc.pathname === it.to ? "bg-gray-200 font-medium" : "hover:bg-gray-50"}`}
           >
-            🚪 Logout
-          </button>
-        </div>
-      )}
-    </div>
+            {it.label}
+          </Link>
+        ))}
+      </nav>
+    </aside>
   );
 }

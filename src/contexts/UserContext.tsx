@@ -1,37 +1,45 @@
 import React, { createContext, useContext, useState } from "react";
 
 export type UserRole = "admin" | "azienda" | "creator" | "operatore" | "macchinario";
+export type Session = { role: UserRole | null; data: any | null };
 
-export interface UserSession {
-  role: UserRole | null;
-  data: any | null; // Puoi tipizzare meglio: Azienda, Actor, ecc
-}
-
-interface UserContextProps {
-  session: UserSession;
-  login: (role: UserRole, data: any) => void;
+type CtxType = {
+  session: Session;
+  login: (role: UserRole, data?: any) => void;
   logout: () => void;
-}
+};
 
-const UserContext = createContext<UserContextProps>({
-  session: { role: null, data: null },
-  login: () => {},
-  logout: () => {}
-});
+const Ctx = createContext<CtxType | null>(null);
+
+function safeParse<T>(raw: string | null, fb: T): T {
+  try {
+    return raw ? (JSON.parse(raw) as T) : fb;
+  } catch {
+    return fb;
+  }
+}
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<UserSession>({ role: null, data: null });
-
-  const login = (role: UserRole, data: any) => setSession({ role, data });
-  const logout = () => setSession({ role: null, data: null });
-
-  return (
-    <UserContext.Provider value={{ session, login, logout }}>
-      {children}
-    </UserContext.Provider>
+  const [session, setSession] = useState<Session>(() =>
+    safeParse<Session>(localStorage.getItem("session"), { role: null, data: null })
   );
+
+  const login = (role: UserRole, data?: any) => {
+    const s: Session = { role, data: data ?? null };
+    localStorage.setItem("session", JSON.stringify(s));
+    setSession(s);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("session");
+    setSession({ role: null, data: null });
+  };
+
+  return <Ctx.Provider value={{ session, login, logout }}>{children}</Ctx.Provider>;
 }
 
-export function useUser() {
-  return useContext(UserContext);
-}
+export const useUser = () => {
+  const v = useContext(Ctx);
+  if (!v) throw new Error("UserContext missing");
+  return v;
+};
