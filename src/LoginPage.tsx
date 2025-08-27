@@ -1,6 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useUser, routeByRole, UserRole } from "./contexts/UserContext";
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 type RoleOption = { value: UserRole; label: string };
 
@@ -21,11 +41,11 @@ export default function LoginPage() {
   const { session, login, logout } = useUser();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
 
   const [role, setRole] = useState<UserRole>("admin");
   const [seed, setSeed] = useState<string>("");
   const [did, setDid] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
 
   const forceReset = searchParams.get("reset") === "1";
 
@@ -46,17 +66,18 @@ export default function LoginPage() {
   }, [forceReset, session.role, targetPath, navigate, logout]);
 
   function handleDemoAdmin() {
-    setError(null);
     login("admin", { seed: "DEMO_ADMIN_SEED", did: null });
     navigate("/admin", { replace: true });
   }
 
   function handleSeedLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     if (role !== "admin" && !seed.trim()) {
-      setError("Inserisci un seed valido per il ruolo selezionato.");
+      toast({
+        title: "Seed mancante",
+        description: "Inserisci un seed valido per il ruolo selezionato.",
+      });
       return;
     }
 
@@ -70,93 +91,82 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">TRUSTUP · Login</h1>
-          <a
-            href="/login?reset=1"
-            className="text-sm underline text-gray-600 hover:text-gray-800"
-          >
-            Torna alla seed login
-          </a>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <Card className="w-full max-w-xl bg-card">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">TRUSTUP</CardTitle>
+          </div>
+          <CardDescription>
+            Accedi per gestire identità, eventi e DPP.
+          </CardDescription>
+        </CardHeader>
 
-        <div className="mb-8 rounded-xl border border-gray-200 p-4">
-          <h2 className="font-semibold mb-2">Accesso rapido (Demo Admin)</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Esegue il login come <strong>Admin</strong> demo (sponsored tx, nessun wallet).
-          </p>
-          <button
-            onClick={handleDemoAdmin}
-            className="w-full rounded-xl px-4 py-2 bg-black text-white hover:opacity-90"
-          >
-            Entra come Admin demo
-          </button>
-        </div>
+        <CardContent className="space-y-6">
+          {/* Blocco demo admin */}
+          <div className="rounded-2xl border p-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Esegue il login come <span className="font-medium text-foreground">Admin</span>.
+            </p>
+            <Button className="w-full" size="lg" onClick={handleDemoAdmin}>
+              Entra come Admin demo
+            </Button>
+          </div>
 
-        <form onSubmit={handleSeedLogin} className="space-y-4">
-          <h2 className="font-semibold">Login con Seed + Ruolo</h2>
+          {/* Form login */}
+          <form onSubmit={handleSeedLogin} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1 space-y-2">
+                <Label>Ruolo</Label>
+                <Select value={role} onValueChange={(v: UserRole) => setRole(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona ruolo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="md:col-span-1">
-              <label className="block text-sm text-gray-700 mb-1">Ruolo</label>
-              <select
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 bg-white"
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-              >
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
+              <div className="md:col-span-2 space-y-2">
+                <Label>Seed</Label>
+                <Input
+                  placeholder="Incolla il seed dell'attore (es. azienda/creator/operatore/macchinario)"
+                  value={seed}
+                  onChange={(e) => setSeed(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm text-gray-700 mb-1">Seed</label>
-              <input
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                placeholder="Incolla il seed dell'attore (es. azienda/creator/operatore/macchinario)"
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
+            <div className="space-y-2">
+              <Label>DID (opzionale)</Label>
+              <Input
+                placeholder="did:iota:... (se già assegnato all'attore)"
+                value={did}
+                onChange={(e) => setDid(e.target.value)}
                 autoComplete="off"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">DID (opzionale)</label>
-            <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-2"
-              placeholder="did:iota:... (se già assegnato all'attore)"
-              value={did}
-              onChange={(e) => setDid(e.target.value)}
-              autoComplete="off"
-            />
-          </div>
+            <Button type="submit" className="w-full" size="lg">
+              Accedi
+            </Button>
+          </form>
 
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
-              {error}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Privacy: on-chain pubblichiamo solo hash/URI (no PII). Il payload VC/DPP resta off-chain
+            (IPFS/S3 o equivalente). Le azioni firmate consumano crediti e non richiedono wallet
+            utente (sponsored tx via Gas Station).
+          </p>
+        </CardContent>
 
-          <button
-            type="submit"
-            className="w-full rounded-xl px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
-          >
-            Accedi
-          </button>
-        </form>
-
-        <p className="text-[12px] text-gray-500 mt-6">
-          Privacy: on-chain pubblichiamo solo hash/URI (no PII). Il payload VC/DPP resta off-chain
-          (IPFS/S3 o equivalente). Le azioni firmate consumano crediti e non richiedono wallet
-          utente (sponsored tx via Gas Station).
-        </p>
-      </div>
+        <CardFooter />
+      </Card>
     </div>
   );
 }
