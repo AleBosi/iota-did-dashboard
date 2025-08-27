@@ -1,54 +1,60 @@
-import { Azienda } from "../../../models/azienda";
+import React from "react";
 
-type Props = {
-  aziende: Azienda[];
-  onSelect?: (azienda: Azienda) => void;
-  onDelete?: (id: string) => void;
-};
+export default function AziendaList({
+  aziende,
+  onSelect,
+  onDelete,
+  getCredits,
+  showDid,
+}: {
+  aziende: any[];
+  onSelect: (a: any) => void;
+  onDelete: (id: string) => void;
+  getCredits?: (id: string) => number;
+  showDid?: boolean;
+}) {
+  if (!aziende || aziende.length === 0) {
+    return <div className="text-sm text-gray-400">Nessuna azienda presente</div>;
+    }
 
-const AziendaList = ({ aziende, onSelect, onDelete }: Props) => {
   return (
-    <div className="bg-white rounded-2xl shadow p-6">
-      <h2 className="text-xl font-bold mb-4">Lista Aziende</h2>
+    <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
-          <tr>
-            <th className="text-left py-2">Nome</th>
-            <th className="text-left py-2">P.IVA</th>
-            <th className="text-left py-2">DID</th>
-            <th className="text-left py-2">Azioni</th>
+          <tr className="text-left text-gray-600">
+            <th className="py-2 pr-4">Nome</th>
+            <th className="py-2 pr-4">P.IVA</th>
+            {showDid && <th className="py-2 pr-4">DID</th>}
+            <th className="py-2 pr-4">Crediti</th>
+            <th className="py-2 pr-4">Azioni</th>
           </tr>
         </thead>
         <tbody>
-          {aziende.length === 0 && (
-            <tr>
-              <td colSpan={4} className="text-center py-4 text-gray-500">
-                Nessuna azienda presente
+          {aziende.map((a) => (
+            <tr key={a.id} className="border-t border-gray-100">
+              <td className="py-2 pr-4">{a.name}</td>
+              <td className="py-2 pr-4">{a.legalInfo?.vat || "-"}</td>
+              {showDid && (
+                <td className="py-2 pr-4">
+                  <code className="text-xs">{a.id}</code>
+                </td>
+              )}
+              <td className="py-2 pr-4">
+                {(getCredits ? getCredits(a.id) : 0).toLocaleString()}
               </td>
-            </tr>
-          )}
-          {aziende.map(az => (
-            <tr key={az.id} className="border-t hover:bg-gray-50">
-              <td className="py-2 font-semibold">{az.name}</td>
-              <td className="py-2 text-xs text-gray-500">{az.legalInfo?.vat || "-"}</td>
-              <td className="py-2 text-xs text-gray-400">{az.did ?? az.id}</td>
-              <td className="py-2 flex gap-2">
-                {onSelect && (
-                  <button
-                    className="px-2 py-1 rounded bg-blue-100 text-blue-800 hover:bg-blue-200"
-                    onClick={() => onSelect(az)}
-                  >
-                    Dettagli
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    className="px-2 py-1 rounded bg-red-100 text-red-800 hover:bg-red-200"
-                    onClick={() => onDelete(az.id)}
-                  >
-                    Elimina
-                  </button>
-                )}
+              <td className="py-2 pr-4 space-x-2">
+                <button
+                  className="rounded px-3 py-1 border hover:bg-gray-100"
+                  onClick={() => onSelect(a)}
+                >
+                  Dettagli
+                </button>
+                <button
+                  className="rounded px-3 py-1 border border-red-300 text-red-700 hover:bg-red-50"
+                  onClick={() => onDelete(a.id)}
+                >
+                  Elimina
+                </button>
               </td>
             </tr>
           ))}
@@ -56,6 +62,4 @@ const AziendaList = ({ aziende, onSelect, onDelete }: Props) => {
       </table>
     </div>
   );
-};
-
-export default AziendaList;
+}

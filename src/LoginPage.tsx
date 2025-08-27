@@ -1,116 +1,161 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useUser, UserRole } from "./contexts/UserContext";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useUser, routeByRole, UserRole } from "./contexts/UserContext";
 
-// util mini
-function uid() {
-  return Math.random().toString(36).slice(2, 8) + "-" + Date.now().toString(36);
-}
-function genSeed() {
-  const a = new Uint8Array(32);
-  crypto.getRandomValues(a);
-  return Array.from(a).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-function didFor(role: UserRole) {
-  return `did:iota:evm:${role}-${uid()}`;
+type RoleOption = { value: UserRole; label: string };
+
+const ROLES: RoleOption[] = [
+  { value: "admin", label: "Admin" },
+  { value: "azienda", label: "Azienda" },
+  { value: "creator", label: "Creator" },
+  { value: "operatore", label: "Operatore" },
+  { value: "macchinario", label: "Macchinario" },
+];
+
+function normalizeDid(didInput: string | undefined): string | null {
+  const d = (didInput || "").trim();
+  return d.length ? d : null;
 }
 
 export default function LoginPage() {
-  const nav = useNavigate();
-  const { login } = useUser();
+  const { session, login, logout } = useUser();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // admin
-  const [adminUser, setAdminUser] = useState("");
-  const [adminPass, setAdminPass] = useState("");
+  const [role, setRole] = useState<UserRole>("admin");
+  const [seed, setSeed] = useState<string>("");
+  const [did, setDid] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
-  // seed
-  const [role, setRole] = useState<UserRole>("azienda");
-  const [seed, setSeed] = useState("");
+  const forceReset = searchParams.get("reset") === "1";
 
-  function onLoginAdmin(e: React.FormEvent) {
-    e.preventDefault();
-    // demo: admin/admin123
-    if (adminUser !== "admin" || adminPass !== "admin123") {
-      alert("Credenziali demo: admin / admin123");
+  const targetPath = useMemo(() => {
+    if (!session.role) return "/login";
+    return routeByRole[session.role] || "/login";
+  }, [session.role]);
+
+  // Se arrivi con ?reset=1, azzera la sessione e mostra il form.
+  useEffect(() => {
+    if (forceReset) {
+      logout();
       return;
     }
-    login("admin", { did: didFor("admin") });
-    nav("/admin");
+    if (session.role) {
+      navigate(targetPath, { replace: true });
+    }
+  }, [forceReset, session.role, targetPath, navigate, logout]);
+
+  function handleDemoAdmin() {
+    setError(null);
+    login("admin", { seed: "DEMO_ADMIN_SEED", did: null });
+    navigate("/admin", { replace: true });
   }
 
-  function onLoginSeed(e: React.FormEvent) {
+  function handleSeedLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (!seed.trim()) return alert("Inserisci la seed");
-    login(role, { did: didFor(role), seedEnc: btoa(seed) });
-    nav("/" + role);
+    setError(null);
+
+    if (role !== "admin" && !seed.trim()) {
+      setError("Inserisci un seed valido per il ruolo selezionato.");
+      return;
+    }
+
+    const didNorm = normalizeDid(did);
+    login(role, {
+      seed: seed.trim() || null,
+      did: didNorm,
+    });
+
+    navigate(routeByRole[role] || "/login", { replace: true });
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow p-8">
-        <h1 className="text-3xl font-extrabold text-center mb-2">TRUSTUP</h1>
-        <p className="text-center text-gray-500 mb-8">IOTA DID Dashboard – Sistema di Identità Decentralizzata</p>
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">TRUSTUP · Login</h1>
+          <a
+            href="/login?reset=1"
+            className="text-sm underline text-gray-600 hover:text-gray-800"
+          >
+            Torna alla seed login
+          </a>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Login Admin */}
-          <div>
-            <h2 className="font-semibold mb-3">🔐 Login Admin</h2>
-            <form onSubmit={onLoginAdmin} className="space-y-3">
-              <input
-                className="w-full border rounded px-3 py-2"
-                placeholder="Username"
-                value={adminUser}
-                onChange={(e) => setAdminUser(e.target.value)}
-              />
-              <input
-                type="password"
-                className="w-full border rounded px-3 py-2"
-                placeholder="Password"
-                value={adminPass}
-                onChange={(e) => setAdminPass(e.target.value)}
-              />
-              <button className="w-full px-4 py-2 rounded bg-blue-600 text-white" type="submit">
-                Accedi come Admin
-              </button>
-              <div className="text-xs text-gray-500">Demo: admin / admin123</div>
-            </form>
-          </div>
+        <div className="mb-8 rounded-xl border border-gray-200 p-4">
+          <h2 className="font-semibold mb-2">Accesso rapido (Demo Admin)</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Esegue il login come <strong>Admin</strong> demo (sponsored tx, nessun wallet).
+          </p>
+          <button
+            onClick={handleDemoAdmin}
+            className="w-full rounded-xl px-4 py-2 bg-black text-white hover:opacity-90"
+          >
+            Entra come Admin demo
+          </button>
+        </div>
 
-          {/* Login Seed */}
-          <div>
-            <h2 className="font-semibold mb-3">🌱 Login tramite Seed</h2>
-            <form onSubmit={onLoginSeed} className="space-y-3">
+        <form onSubmit={handleSeedLogin} className="space-y-4">
+          <h2 className="font-semibold">Login con Seed + Ruolo</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-1">
+              <label className="block text-sm text-gray-700 mb-1">Ruolo</label>
               <select
-                className="w-full border rounded px-3 py-2"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 bg-white"
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
               >
-                <option value="azienda">Azienda</option>
-                <option value="creator">Creator</option>
-                <option value="operatore">Operatore</option>
-                <option value="macchinario">Macchinario</option>
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
               </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm text-gray-700 mb-1">Seed</label>
               <input
-                className="w-full border rounded px-3 py-2"
-                placeholder="Seed: inserisci o genera..."
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                placeholder="Incolla il seed dell'attore (es. azienda/creator/operatore/macchinario)"
                 value={seed}
                 onChange={(e) => setSeed(e.target.value)}
+                autoComplete="off"
               />
-              <div className="flex gap-2">
-                <button
-                  className="px-3 py-2 rounded border"
-                  type="button"
-                  onClick={() => setSeed(genSeed())}
-                >
-                  🎲 Genera
-                </button>
-                <button className="flex-1 px-3 py-2 rounded bg-blue-600 text-white" type="submit">
-                  🚀 Accedi
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">DID (opzionale)</label>
+            <input
+              className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              placeholder="did:iota:... (se già assegnato all'attore)"
+              value={did}
+              onChange={(e) => setDid(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full rounded-xl px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Accedi
+          </button>
+        </form>
+
+        <p className="text-[12px] text-gray-500 mt-6">
+          Privacy: on-chain pubblichiamo solo hash/URI (no PII). Il payload VC/DPP resta off-chain
+          (IPFS/S3 o equivalente). Le azioni firmate consumano crediti e non richiedono wallet
+          utente (sponsored tx via Gas Station).
+        </p>
       </div>
     </div>
   );
