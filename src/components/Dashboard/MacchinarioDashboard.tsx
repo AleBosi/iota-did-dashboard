@@ -73,7 +73,7 @@ export default function MacchinarioDashboard() {
   const data = (useData() as any) ?? {};
   const { actors = [], credits, events: allEvents = [], addEvent, spendFromActor } = data;
 
-  // logout robusto
+  // ===== Logout robusto =====
   const handleLogout = () => {
     try {
       logout?.();
@@ -83,7 +83,7 @@ export default function MacchinarioDashboard() {
     }
   };
 
-  // risoluzione macchina corrente
+  // ===== Risoluzione macchina corrente =====
   const machines: Actor[] = useMemo(
     () => (actors || []).filter((a: any) => a?.role === "macchinario"),
     [actors]
@@ -132,7 +132,7 @@ export default function MacchinarioDashboard() {
   const machineDid = me.id;
   const machineCreditsGlobal = (credits?.byActor?.[machineDid] ?? 0) as number;
 
-  // state UI
+  // ===== Stato UI =====
   const [activeTab, setActiveTab] = useState<Tab>("stato");
 
   const [currentTelemetry, setCurrentTelemetry] = useState<TelemetryData>({
@@ -160,7 +160,7 @@ export default function MacchinarioDashboard() {
   const [creditsLocal, setCreditsLocal] = useState<number>(me.credits || 0);
   const [creditHistory, setCreditHistory] = useState<CreditTransaction[]>([]);
 
-  // load persistente
+  // ===== Caricamento persistente =====
   useEffect(() => {
     const saved = localStorage.getItem(`macchinario-${machineDid}-data`);
     if (saved) {
@@ -181,11 +181,11 @@ export default function MacchinarioDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [machineDid]);
 
-  // merge assegnazioni -> tasks
+  // ===== Merge: assegnazioni DataContext -> tasks UI =====
   const assignmentsForMe = useMemo(() => {
     const list = (allEvents || []) as any[];
     return list.filter((e) => {
-      const k = e?.kind || e?.type;
+      const k = e?.kind || e?.type; // compat legacy
       const toMe =
         e?.assignedMachineDid === machineDid ||
         e?.machineDid === machineDid ||
@@ -212,11 +212,11 @@ export default function MacchinarioDashboard() {
       instructions: ev.instructions,
       automationLevel: ev.automationLevel || "full_auto",
     }));
-    setAssignedTasks((prev) => mergeTasks(prev, mapped));
+    setAssignedTasks((prev) => mergeTasksNonDistruttivo(prev, mapped));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(assignmentsForMe)]);
 
-  // save persistente
+  // ===== Salvataggio persistente =====
   useEffect(() => {
     const toSave: MacchinarioState = {
       assignedTasks,
@@ -231,7 +231,7 @@ export default function MacchinarioDashboard() {
     localStorage.setItem(`macchinario-${machineDid}-data`, JSON.stringify(toSave));
   }, [assignedTasks, completedTasks, events, machineVCs, telemetryHistory, creditsLocal, creditHistory, currentTelemetry, machineDid]);
 
-  // telemetria “live”
+  // ===== Telemetria “live” =====
   useEffect(() => {
     const id = setInterval(() => {
       const t: TelemetryData = {
@@ -250,7 +250,7 @@ export default function MacchinarioDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  // helpers eventi globali
+  // ===== Helpers eventi globali =====
   function appendStatus(task: Task, status: "active" | "completed") {
     if (!addEvent) return;
     addEvent({
@@ -295,7 +295,7 @@ export default function MacchinarioDashboard() {
     ]);
   }
 
-  // actions task
+  // ===== Actions task =====
   const handleExecuteTask = (taskId: string) => {
     const task = assignedTasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -345,7 +345,7 @@ export default function MacchinarioDashboard() {
     ]);
   };
 
-  // tabs content
+  // ===== Tabs =====
   const renderStatoTab = () => (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Stato Macchina e Telemetria</h2>
@@ -668,13 +668,34 @@ export default function MacchinarioDashboard() {
   }
 }
 
-// util
-function mergeTasks(existing: Task[], incoming: Task[]): Task[] {
+/* ===== util: merge idempotente NON distruttivo =====
+   - aggiunge nuovi task
+   - se arriva un task già noto ma con più dettagli (productName, priority, instructions, automationLevel),
+     aggiorna SOLO questi campi, preservando status/tempo/note locali.
+*/
+function mergeTasksNonDistruttivo(existing: Task[], incoming: Task[]): Task[] {
   const byId = new Map<string, Task>();
   existing.forEach((t) => byId.set(t.id, t));
   incoming.forEach((t) => {
-    if (!byId.has(t.id)) {
+    const prev = byId.get(t.id);
+    if (!prev) {
       byId.set(t.id, t);
+    } else {
+      byId.set(t.id, {
+        ...prev,
+        title: t.title || prev.title,
+        description: t.description || prev.description,
+        productId: t.productId || prev.productId,
+        productName: t.productName || prev.productName,
+        assignedBy: t.assignedBy || prev.assignedBy,
+        assignedAt: t.assignedAt || prev.assignedAt,
+        // preserviamo progressi locali:
+        status: prev.status,
+        // aggiorniamo meta non distruttivi:
+        priority: t.priority || prev.priority,
+        instructions: t.instructions ?? prev.instructions,
+        automationLevel: t.automationLevel || prev.automationLevel,
+      });
     }
   });
   return Array.from(byId.values());

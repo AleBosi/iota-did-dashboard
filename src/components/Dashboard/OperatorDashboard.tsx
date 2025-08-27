@@ -163,7 +163,7 @@ export default function OperatorDashboard() {
   const assignmentsForMe = useMemo(() => {
     const list = (allEvents || []) as any[];
     return list.filter((e) => {
-      const k = e?.kind || e?.type; // fallback
+      const k = e?.kind || e?.type; // fallback legacy
       const toMe =
         e?.assignedOperatorDid === me.id ||
         e?.operatorDid === me.id ||
@@ -174,6 +174,8 @@ export default function OperatorDashboard() {
 
   useEffect(() => {
     if (!assignmentsForMe.length) return;
+
+    // Map eventi -> Task (compat: accettiamo productName/typeId/priority/instructions se presenti)
     const mapped: Task[] = assignmentsForMe.map((ev: any) => ({
       id: String(ev.id || ev.eventId || `assign-${ev.productId || ""}-${ev.createdAt || Date.now()}`),
       title: ev.title || ev.message || "Assegnazione",
@@ -190,7 +192,7 @@ export default function OperatorDashboard() {
       instructions: ev.instructions,
     }));
 
-    setAssignedTasks((prev) => mergeTasks(prev, mapped));
+    setAssignedTasks((prev) => mergeTasksNonDistruttivo(prev, mapped));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(assignmentsForMe)]);
 
@@ -562,13 +564,34 @@ function ProductDetails({ product }: { product: Product }) {
   );
 }
 
-// ===== util =====
-function mergeTasks(existing: Task[], incoming: Task[]): Task[] {
+/* ===== util: merge idempotente NON distruttivo =====
+   - aggiunge nuovi task
+   - SE arriva un task già noto ma con campi arricchiti (productName, typeId, priority, instructions),
+     aggiorna quei campi lasciando invariati status/notes locali.
+*/
+function mergeTasksNonDistruttivo(existing: Task[], incoming: Task[]): Task[] {
   const byId = new Map<string, Task>();
   existing.forEach((t) => byId.set(t.id, t));
   incoming.forEach((t) => {
-    if (!byId.has(t.id)) {
+    const prev = byId.get(t.id);
+    if (!prev) {
       byId.set(t.id, t);
+    } else {
+      byId.set(t.id, {
+        ...prev,
+        title: t.title || prev.title,
+        description: t.description || prev.description,
+        productId: t.productId || prev.productId,
+        productName: t.productName || prev.productName,
+        assignedBy: t.assignedBy || prev.assignedBy,
+        assignedAt: t.assignedAt || prev.assignedAt,
+        // preserviamo progressi locali:
+        status: prev.status,
+        notes: prev.notes,
+        // aggiorniamo meta non distruttivi:
+        priority: t.priority || prev.priority,
+        instructions: t.instructions ?? prev.instructions,
+      });
     }
   });
   return Array.from(byId.values());
