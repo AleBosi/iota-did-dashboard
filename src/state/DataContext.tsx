@@ -6,7 +6,11 @@ import type { Azienda } from "../models/azienda";
 import type { Actor } from "../models/actor";
 import type { Product } from "../models/product";
 import type { ProductType } from "../models/productType";
-import type { EventItem } from "../models/event";
+
+// ✅ separo i type dai valori (fix HMR / runtime)
+import type { Event as EventItem, AssignmentStatus } from "../models/event";
+import { effectiveStatus, canTransition } from "../models/event";
+
 import type { VerifiableCredential } from "../models/vc";
 
 export interface CreditsLedger {
@@ -65,7 +69,7 @@ function bootstrapIfNeeded(): DataState {
     };
   }
 
-  // Seed minimale opzionale (puoi rimuoverlo)
+  // Seed minimale opzionale
   const aziendaDid = `did:iota:demo:${uid(8)}`;
   const demoAzienda: Azienda = {
     id: aziendaDid,
@@ -115,6 +119,7 @@ function bootstrapIfNeeded(): DataState {
 }
 
 interface DataContextShape extends DataState {
+  // CRUD esistenti
   addAzienda: (a: Azienda) => void;
   updateAzienda: (a: Azienda) => void;
   removeAzienda: (aziendaId: string) => void;
@@ -143,8 +148,20 @@ interface DataContextShape extends DataState {
   grantToActor: (actorDid: string, amount: number) => void;
   spendFromActor: (actorDid: string, amount: number) => boolean;
 
-  // 🔋 nuovo: ricarica credito admin (per UI/Admin e restore)
+  // 🔋 ricarica credito admin
   rechargeAdmin: (amount: number) => void;
+
+  // ✅ NUOVE API (retro-compatibili)
+  getAssignmentsForOperator: (operatorDid: string) => (EventItem & { status: AssignmentStatus })[];
+  getAssignmentsForMachine: (machineDid: string) => (EventItem & { status: AssignmentStatus })[];
+
+  updateAssignmentStatus: (assignmentId: string, next: AssignmentStatus, performerDid: string) => void;
+  addNote: (parentEventId: string, note: string, performedByDid: string) => void;
+  addTelemetry: (payload: any, machineDid: string, parentEventId?: string, performedByDid?: string) => void;
+
+  spendCredits: (did: string, amount: number, reason: string, refId?: string) => void;
+  getCredits: (did: string) => number;
+  seedCreditsIfEmpty: (did: string, amount: number) => void;
 
   resetAll: () => void;
 }
@@ -165,6 +182,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     safeSet(LSK.credits, state.credits);
   }, [state]);
 
+  // ===== CRUD esistenti (invariati)
   const addAzienda = (a: Azienda) =>
     setState((s) => ({ ...s, aziende: [...s.aziende, a] }));
 
@@ -287,6 +305,109 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       credits: { ...s.credits, admin: (s.credits.admin || 0) + Math.max(0, amount) },
     }));
 
+  // ===== NUOVE API
+
+  const getAssignmentsForOperator = (operatorDid: string) =>
+    state.events
+      .filter((e) => e.type === "Assegnazione" && e.operatoreId === operatorDid)
+      .map((e) => ({ ...e, status: effectiveStatus(e) }))
+      .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
+      .reverse();
+
+  const getAssignmentsForMachine = (machineDid: string) =>
+    state.events
+      .filter((e) => e.type === "Assegnazione" && e.macchinarioId === machineDid)
+      .map((e) => ({ ...e, status: effectiveStatus(e) }))
+      .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
+      .reverse();
+
+  const updateAssignmentStatus = (assignmentId: string, next: AssignmentStatus, performerDid: string) => {
+    setState((s) => {
+      const idx = s.events.findIndex((ev) => ev.id === assignmentId);
+      if (idx < 0) return s;
+
+      const current = effectiveStatus(s.events[idx]);
+      if (!canTransition(current, next)) return s;
+
+      const updated = { ...s.events[idx] };
+      updated.status = next;
+      if (next === "done") updated.done = true;
+      if (next === "cancelled") updated.done = false;
+
+      if (performerDid) {
+        const tag = `[last_by:${performerDid}]`;
+        const hasTag = (updated.description || "").includes("[last_by:");
+        updated.description = (updated.description || "");
+        updated.description = hasTag
+          ? updated.description.replace(/\[last_by:[^\]]+\]/, tag)
+          : `${updated.description} ${tag}`.trim();
+      }
+
+      const nextEvents = [...s.events];
+      nextEvents[idx] = updated;
+      return { ...s, events: nextEvents };
+    });
+  };
+
+  const addNote = (parentEventId: string, note: string, performedByDid: string) => {
+    setState((s) => {
+      const idx = s.events.findIndex((ev) => ev.id === parentEventId);
+      if (idx < 0) return s;
+
+      const target = s.events[idx];
+      const notes = Array.isArray(target.notes) ? [...target.notes] : [];
+      notes.push({
+        id: `note_${uid(6)}`,
+        text: note,
+        createdAt: new Date().toISOString(),
+        performedByDid,
+      });
+
+      const updated: EventItem = { ...target, notes };
+      const nextEvents = [...s.events];
+      nextEvents[idx] = updated;
+      return { ...s, events: nextEvents };
+    });
+  };
+
+  const addTelemetry = (payload: any, machineDid: string, parentEventId?: string, performedByDid?: string) => {
+    const now = new Date().toISOString();
+    const parent = parentEventId ? state.events.find((e) => e.id === parentEventId) : undefined;
+
+    const telemetryEvent: EventItem = {
+      id: `tele_${uid(8)}`,
+      productId: parent?.productId || "",
+      operatoreId: performedByDid || parent?.operatoreId || "",
+      macchinarioId: machineDid,
+      type: "Telemetry",
+      description: JSON.stringify({ payload, parentEventId }, null, 2),
+      date: now,
+      creatorId: performedByDid || machineDid,
+    };
+
+    setState((s) => ({ ...s, events: [...s.events, telemetryEvent] }));
+  };
+
+  const spendCredits = (did: string, amount: number, _reason: string, _refId?: string) => {
+    const ok = spendFromActor(did, amount);
+    if (!ok) throw new Error(`Crediti insufficienti: saldo attuale < ${amount}`);
+  };
+
+  const getCredits = (did: string) => state.credits.byActor[did] ?? 0;
+
+  const seedCreditsIfEmpty = (did: string, amount: number) => {
+    setState((s) => {
+      if (s.credits.byActor[did] !== undefined) return s;
+      return {
+        ...s,
+        credits: {
+          ...s.credits,
+          byActor: { ...s.credits.byActor, [did]: amount },
+        },
+      };
+    });
+  };
+
   const resetAll = () => {
     safeSet(LSK.seeded, false);
     const fresh = bootstrapIfNeeded();
@@ -317,8 +438,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       grantToActor,
       spendFromActor,
       rechargeAdmin,
+      getAssignmentsForOperator,
+      getAssignmentsForMachine,
+      updateAssignmentStatus,
+      addNote,
+      addTelemetry,
+      spendCredits,
+      getCredits,
+      seedCreditsIfEmpty,
       resetAll,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state]
   );
 
