@@ -21,9 +21,8 @@ import Header from "../Common/Header";
 
 import SectionCard from "../Common/SectionCard";
 import EmptyState from "../Common/EmptyState";
-import StatusBadge from "../Common/StatusBadge";
 
-// Shim toast (se hai già un Toaster, sostituisci con il tuo hook)
+// shim toast minimale (se hai un Toaster reale, sostituisci)
 function useToast() {
   return {
     toast: ({ title, description }: { title?: string; description?: string }) =>
@@ -33,7 +32,7 @@ function useToast() {
 
 type Tab = "tasks" | "storico" | "prodotti" | "vc" | "crediti" | "json";
 
-// Costi coerenti con la policy
+// policy costi
 const NOTE_COST = 1;
 const COMPLETE_COST = 1;
 
@@ -59,7 +58,7 @@ export default function OperatorDashboard() {
 
   const { toast } = useToast();
 
-  // ===== Logout robusto
+  // logout robusto
   const handleLogout = () => {
     try {
       logout?.();
@@ -69,7 +68,7 @@ export default function OperatorDashboard() {
     }
   };
 
-  // ===== Risoluzione Operatore corrente
+  // resolve operatore corrente
   const operators: Actor[] = useMemo(
     () => (actors || []).filter((a: any) => a?.role === "operatore"),
     [actors]
@@ -115,15 +114,14 @@ export default function OperatorDashboard() {
     );
   }
 
-  // ===== Stato UI
-  const [activeTab, setActiveTab] = useState<Tab>("storico"); // default come nello screenshot
+  // stato UI
+  const [activeTab, setActiveTab] = useState<Tab>("storico");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskNotes, setTaskNotes] = useState<string>("");
-
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedVC, setSelectedVC] = useState<VerifiableCredential | null>(null);
 
-  // ===== Crediti (DataContext first, fallback)
+  // crediti (preferisci DataContext)
   const getCredits: (did: string) => number =
     data.getCredits || ((did: string) => (data.credits?.byActor?.[did] ?? 0));
   const spendCredits: (did: string, amount: number, reason: string, refId?: string) => void =
@@ -146,7 +144,7 @@ export default function OperatorDashboard() {
 
   const credits = me?.id ? getCredits(me.id) : 0;
 
-  // ===== Task derivati dalle assegnazioni
+  // task derivati da assignments
   const assignmentsForMe = useMemo(() => {
     if (data.getAssignmentsForOperator) return data.getAssignmentsForOperator(me.id);
     const list = (allEvents || []) as any[];
@@ -169,13 +167,13 @@ export default function OperatorDashboard() {
     [assignmentsForMe]
   );
 
-  // ===== Storico eventi per l’operatore
+  // storico eventi per l’operatore
   const myEvents: Event[] = useMemo(() => {
     const list = (allEvents || []) as Event[];
     return list.filter((e: any) => e?.operatoreId === me.id);
   }, [allEvents, me.id]);
 
-  // ===== Mutazioni
+  // mutazioni
   const updateAssignmentStatus: (assignmentId: string, next: AssignmentStatus, performerDid: string) => void =
     data.updateAssignmentStatus || (() => {});
   const addNote: (parentEventId: string, note: string, performedByDid: string) => void =
@@ -217,7 +215,7 @@ export default function OperatorDashboard() {
     }
   }
 
-  // ===== Sidebar
+  // sidebar
   const sidebarItems = [
     { id: "tasks", label: "🧰 Task Assegnati" },
     { id: "storico", label: "📜 Storico Attività" },
@@ -228,7 +226,25 @@ export default function OperatorDashboard() {
   ];
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-background text-foreground">
+    // ⬇️ scope locale che forza i token anche nei figli legacy
+    <div className="operator-scope min-h-screen w-full overflow-x-hidden bg-background text-foreground">
+      {/* style override locale (niente modifiche globali) */}
+      <style>{`
+        .operator-scope .bg-white { background-color: hsl(var(--card)) !important; }
+        .operator-scope .bg-gray-50 { background-color: hsl(var(--muted)) !important; }
+        .operator-scope .text-gray-500,
+        .operator-scope .text-gray-600,
+        .operator-scope .text-gray-700 { color: hsl(var(--muted-foreground)) !important; }
+        .operator-scope .border-gray-100,
+        .operator-scope .border-gray-200,
+        .operator-scope .border-gray-300 { border-color: hsl(var(--border)) !important; }
+        .operator-scope input, .operator-scope textarea, .operator-scope select {
+          background-color: hsl(var(--background));
+          color: hsl(var(--foreground));
+          border-color: hsl(var(--border));
+        }
+      `}</style>
+
       <div className="flex min-h-screen w-full">
         <aside className="shrink-0">
           <Sidebar
@@ -432,6 +448,7 @@ export default function OperatorDashboard() {
                   )}
 
                   <SectionCard title="Cronologia Completa">
+                    {/* NB: EventHistory potrebbe avere input legacy → lo scope sopra li normalizza */}
                     <EventHistory events={myEvents as any} />
                   </SectionCard>
                 </div>
@@ -473,6 +490,7 @@ export default function OperatorDashboard() {
               {activeTab === "crediti" && (
                 <div className="space-y-6">
                   <SectionCard title="Saldo Personale">
+                    {/* CreditsDashboard potrebbe usare bg-white → lo scope sopra lo normalizza */}
                     <CreditsDashboard credits={credits} onBuyCredits={() => {}} />
                     <p className="text-sm text-muted-foreground mt-2">
                       I crediti sono gestiti dall’azienda e vengono consumati su azioni operative (es. note, completamento).

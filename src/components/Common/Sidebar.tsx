@@ -1,16 +1,21 @@
 import React from "react";
 
-type Item = { id: string; label: string; icon?: string };
+type Item = {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+};
 
 export default function Sidebar({
-  title,
+  title = "TRUSTUP",
   subtitle,
   items,
   activeItem,
   onItemClick,
   onLogout,
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   items: Item[];
   activeItem?: string;
@@ -18,38 +23,60 @@ export default function Sidebar({
   onLogout?: () => void;
 }) {
   return (
-    <aside className="w-56 min-h-screen border-r border-gray-200 bg-white">
-      <div className="p-4 border-b">
-        <div className="text-lg font-bold">{title}</div>
-        {subtitle && <div className="text-xs text-gray-600">{subtitle}</div>}
+    <aside
+      className="
+        h-screen w-[240px]
+        border-r border-border
+        bg-card/30 text-card-foreground
+        sticky top-0
+        hidden md:flex md:flex-col
+      "
+    >
+      {/* Brand */}
+      <div className="px-4 pt-4 pb-3 border-b border-border/60">
+        <div className="text-sm font-semibold tracking-wide">{title}</div>
+        {subtitle && (
+          <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+            {subtitle}
+          </div>
+        )}
       </div>
 
-      <nav className="p-2 space-y-1">
-        {items?.length ? (
-          items.map((it) => (
-            <button
-              key={it.id}
-              onClick={() => onItemClick && onItemClick(it.id)}
-              className={
-                "w-full text-left px-3 py-2 rounded " +
-                (activeItem === it.id
-                  ? "bg-gray-900 text-white"
-                  : "hover:bg-gray-100")
-              }
-            >
-              <span className="mr-2">{it.icon || "•"}</span>
-              {it.label}
-            </button>
-          ))
-        ) : (
-          <div className="text-xs text-gray-400 px-3">Nessuna voce</div>
-        )}
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <ul className="space-y-1">
+          {items.map((it) => {
+            const active = it.id === activeItem;
+            const base =
+              "w-full text-left flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition border";
+            const cls = active
+              ? "bg-primary/10 border-border text-foreground"
+              : "bg-transparent border-transparent text-foreground/90 hover:bg-card/70 hover:border-border";
+            return (
+              <li key={it.id}>
+                <button
+                  disabled={it.disabled}
+                  onClick={() => !it.disabled && onItemClick?.(it.id)}
+                  className={`${base} ${cls} ${it.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {it.icon ? <span className="shrink-0">{it.icon}</span> : null}
+                  <span className="truncate">{it.label}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      <div className="p-4 mt-auto">
+      {/* Footer */}
+      <div className="px-3 py-3 border-t border-border/60">
         <button
           onClick={onLogout}
-          className="w-full border border-gray-300 rounded px-3 py-2 hover:bg-gray-100"
+          className="
+            w-full inline-flex items-center justify-center rounded-md
+            bg-muted px-3 py-2 text-sm text-foreground/90
+            border border-border hover:bg-muted/70 transition
+          "
         >
           Esci
         </button>

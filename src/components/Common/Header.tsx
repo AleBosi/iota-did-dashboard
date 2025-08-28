@@ -1,23 +1,63 @@
 import React from "react";
 
+type UserInfo = {
+  username?: string;
+  role?: string;
+};
+
 export default function Header({
-  title,
-  subtitle,
-  rightActions,
+  user,
+  onLogout,
+  rightSlot,
 }: {
-  title: string;
-  subtitle?: string;
-  rightActions?: React.ReactNode;
+  user?: UserInfo;
+  onLogout?: () => void;
+  rightSlot?: React.ReactNode;
 }) {
   return (
-    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+    <header
+      className="
+        sticky top-0 z-40
+        border-b border-border
+        bg-background/80 backdrop-blur
+        supports-[backdrop-filter]:bg-background/60
+      "
+    >
+      <div className="mx-auto w-full max-w-7xl px-6">
+        <div className="flex h-14 items-center justify-between">
+          {/* Left: user info */}
+          <div className="min-w-0">
+            <div className="text-sm text-muted-foreground leading-none">
+              {user?.role ? (
+                <span className="uppercase tracking-wide">{user.role}</span>
+              ) : (
+                <span>Utente</span>
+              )}
+            </div>
+            <div className="text-base font-medium leading-none truncate">
+              {user?.username ?? "Account"}
+            </div>
+          </div>
+
+          {/* Right: actions */}
+          <div className="flex items-center gap-2">
+            {rightSlot}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="
+                  inline-flex items-center rounded-md
+                  bg-muted px-3 py-2 text-sm
+                  text-foreground/90 border border-border
+                  hover:bg-muted/70 transition
+                "
+              >
+                Esci
+              </button>
+            )}
+          </div>
         </div>
-        {rightActions ? <div className="flex items-center gap-2">{rightActions}</div> : null}
       </div>
-    </div>
+    </header>
   );
 }

@@ -108,29 +108,30 @@ export default function MacchinarioDashboard() {
 
   if (!machines.length && !me?.id) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center">
+      <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground">
         <div className="text-center">
           <div className="text-xl font-semibold">Nessun macchinario configurato</div>
-          <p className="text-gray-600 mt-2">Crea un membro con ruolo “macchinario” dalla dashboard Azienda.</p>
-          <a href="/login?reset=1" className="mt-3 inline-block px-3 py-2 border rounded">Torna al login</a>
+          <p className="text-muted-foreground mt-2">Crea un membro con ruolo “macchinario” dalla dashboard Azienda.</p>
+          <a href="/login?reset=1" className="mt-3 inline-block px-3 py-2 border rounded border-border">Torna al login</a>
         </div>
       </div>
     );
   }
   if (!me?.id) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center">
+      <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground">
         <div className="text-center">
           <div className="text-xl font-semibold">Nessun macchinario selezionato</div>
-          <p className="text-gray-600 mt-2">Apri con <code>?did=&lt;DID-macchina&gt;</code> o fai login come macchinario.</p>
-          <a href="/login?reset=1" className="mt-3 inline-block px-3 py-2 border rounded">Torna al login</a>
+          <p className="text-muted-foreground mt-2">Apri con <code>?did=&lt;DID-macchina&gt;</code> o fai login come macchinario.</p>
+          <a href="/login?reset=1" className="mt-3 inline-block px-3 py-2 border rounded border-border">Torna al login</a>
         </div>
       </div>
     );
   }
 
   const machineDid = me.id;
-  const machineCreditsGlobal = (credits?.byActor?.[machineDid] ?? 0) as number;
+  const machineCreditsGlobal =
+    (typeof data.getCredits === "function" ? data.getCredits(machineDid) : credits?.byActor?.[machineDid]) ?? 0;
 
   // ===== Stato UI =====
   const [activeTab, setActiveTab] = useState<Tab>("stato");
@@ -357,12 +358,12 @@ export default function MacchinarioDashboard() {
           <div className="mb-2 break-all">{me?.name || "-"}</div>
           <div className="text-sm text-gray-600">DID</div>
           <div className="break-all text-xs mb-2">{machineDid}</div>
-          <button className="px-3 py-1 text-sm border rounded" onClick={() => navigator.clipboard.writeText(machineDid)}>
+          <button className="px-3 py-1 text-sm border rounded" onClick={() => { try { navigator.clipboard.writeText(machineDid); } catch {} }}>
             Copia DID
           </button>
           <div className="mt-4 text-sm text-gray-600">Seed</div>
           <div className="break-all text-xs mb-2">{(me as any)?.seed || "-"}</div>
-          <button className="px-3 py-1 text-sm border rounded" onClick={() => navigator.clipboard.writeText((me as any)?.seed || "")}>
+          <button className="px-3 py-1 text-sm border rounded" onClick={() => { try { navigator.clipboard.writeText((me as any)?.seed || ""); } catch {} }}>
             Copia seed
           </button>
         </div>
@@ -401,11 +402,17 @@ export default function MacchinarioDashboard() {
           <Metric label="Consumo" value={`${currentTelemetry.powerConsumption.toFixed(1)} kW`} />
           <Metric label="Efficienza" value={`${currentTelemetry.efficiency.toFixed(1)}%`} />
           <div className="text-center col-span-2">
-            <div className={`text-2xl font-bold ${
-              currentTelemetry.status === "operational" ? "text-green-600" :
-              currentTelemetry.status === "maintenance" ? "text-yellow-600" :
-              currentTelemetry.status === "error" ? "text-red-600" : "text-gray-600"
-            }`}>
+            <div
+              className={`text-2xl font-bold ${
+                currentTelemetry.status === "operational"
+                  ? "text-green-600"
+                  : currentTelemetry.status === "maintenance"
+                  ? "text-yellow-600"
+                  : currentTelemetry.status === "error"
+                  ? "text-red-600"
+                  : "text-gray-600"
+              }`}
+            >
               {currentTelemetry.status.toUpperCase()}
             </div>
             <div className="text-sm text-gray-600">Stato Operativo</div>
@@ -457,19 +464,28 @@ export default function MacchinarioDashboard() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        task.status === "assigned" ? "bg-yellow-100 text-yellow-800" :
-                        task.status === "in_progress" ? "bg-blue-100 text-blue-800" :
-                        task.status === "completed" ? "bg-green-100 text-green-800" :
-                        "bg-red-100 text-red-800"
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${
+                          task.status === "assigned"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : task.status === "in_progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : task.status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
                         {task.status}
                       </span>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        task.priority === "high" ? "bg-red-100 text-red-800" :
-                        task.priority === "medium" ? "bg-yellow-100 text-yellow-800" :
-                        "bg-green-100 text-green-800"
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${
+                          task.priority === "high"
+                            ? "bg-red-100 text-red-800"
+                            : task.priority === "medium"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
                         {task.priority}
                       </span>
                     </div>
@@ -496,13 +512,19 @@ export default function MacchinarioDashboard() {
               )}
 
               {selectedTask.status === "assigned" && (
-                <button onClick={() => handleExecuteTask(selectedTask.id)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                <button
+                  onClick={() => handleExecuteTask(selectedTask.id)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
                   {selectedTask.automationLevel === "full_auto" ? "Esegui Automaticamente" : "Avvia Task"}
                 </button>
               )}
 
               {selectedTask.status === "in_progress" && selectedTask.automationLevel !== "full_auto" && (
-                <button onClick={() => handleCompleteTask(selectedTask.id)} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                <button
+                  onClick={() => handleCompleteTask(selectedTask.id)}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
                   Completa Task
                 </button>
               )}
@@ -615,7 +637,25 @@ export default function MacchinarioDashboard() {
   );
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gray-50">
+    <div className="machine-scope min-h-screen w-full overflow-x-hidden bg-background text-foreground">
+      {/* Scope locale: rimappa vecchie utility alla palette shadcn (dark-ready) */}
+      <style>{`
+        .machine-scope .bg-white { background-color: hsl(var(--card)) !important; }
+        .machine-scope .bg-gray-50 { background-color: hsl(var(--muted)) !important; }
+        .machine-scope .text-gray-900 { color: hsl(var(--foreground)) !important; }
+        .machine-scope .text-gray-500,
+        .machine-scope .text-gray-600,
+        .machine-scope .text-gray-700 { color: hsl(var(--muted-foreground)) !important; }
+        .machine-scope .border-gray-100,
+        .machine-scope .border-gray-200,
+        .machine-scope .border-gray-300 { border-color: hsl(var(--border)) !important; }
+        .machine-scope input, .machine-scope textarea, .machine-scope select {
+          background-color: hsl(var(--background));
+          color: hsl(var(--foreground));
+          border-color: hsl(var(--border));
+        }
+      `}</style>
+
       <div className="flex min-h-screen w-full">
         <aside className="shrink-0">
           <Sidebar
@@ -640,8 +680,16 @@ export default function MacchinarioDashboard() {
           <div className="flex-1">
             <div className="max-w-7xl mx-auto w-full p-6">
               <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Macchinario</h1>
-                <p className="text-gray-600">{me.name} — Vista digitale del macchinario</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1">Dashboard Macchinario</h1>
+                    <p className="text-gray-600">{me.name} — Vista digitale del macchinario</p>
+                  </div>
+                  <div className="rounded-full border border-border bg-muted px-3 py-1 text-sm">
+                    <span className="opacity-70 mr-1">Crediti:</span>
+                    <span className="font-medium">{machineCreditsGlobal}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="flex-1 min-w-0">
