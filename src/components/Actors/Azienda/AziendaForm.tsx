@@ -33,17 +33,18 @@ export default function AziendaForm({ onCreate }: Props) {
     const nameTrim = name.trim();
     if (!nameTrim) return;
 
-    // 1) genera mnemonic e derivazione mock
+    // 1) genera mnemonic e derivazione mock (stessa pipeline usata dal login)
     const mnemonic = generateMnemonic24();
     const acc = deriveMockAccount(mnemonic);
     const didIota = `did:iota:evm:${acc.address}`;
 
-    // 2) prepara l'oggetto azienda (senza seed in chiaro)
+    // 2) prepara l'oggetto azienda (seed NON in chiaro; la salviamo cifrata via modale)
     const pending: Azienda = {
       id: didIota,
       did: didIota,
+      evmAddress: acc.address,      // ✅ teniamo anche l’address per UI/consistenza
       name: nameTrim,
-      seed: "", // compat: non salviamo la mnemonic
+      seed: "",                     // compat: niente seed in chiaro nel record
       legalInfo: {
         vat: vat.trim(),
         lei: lei.trim(),
@@ -59,10 +60,9 @@ export default function AziendaForm({ onCreate }: Props) {
       updatedAt: new Date().toISOString(),
     };
 
-    // 3) apri la modale (il form resta montato finché l'utente salva)
+    // 3) apri la modale: dopo "onSaved" persisteremo
     setSubmitting(true);
     setSeedModal({ open: true, id: pending.id, name: pending.name, mnemonic, pending });
-    // NON chiamare ancora onCreate: lo faremo dopo "onSaved"
   };
 
   const afterSaved = () => {
@@ -71,7 +71,7 @@ export default function AziendaForm({ onCreate }: Props) {
       const az = seedModal.pending;
       onCreate(az);
 
-      // ✅ registra l’identità nel registry locale per abilitare il login anche dopo refresh
+      // ✅ registra l’identità nel registry locale per il login da seed
       registerIdentity({
         did: az.did,
         type: "azienda",
@@ -89,22 +89,13 @@ export default function AziendaForm({ onCreate }: Props) {
   return (
     <>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-        <input
-          placeholder="Ragione sociale"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          required
-        />
+        <input placeholder="Ragione sociale" value={name} onChange={e => setName(e.target.value)} required />
         <input placeholder="Partita IVA" value={vat} onChange={e => setVat(e.target.value)} />
         <input placeholder="LEI" value={lei} onChange={e => setLei(e.target.value)} />
         <input placeholder="Indirizzo" value={address} onChange={e => setAddress(e.target.value)} />
         <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
         <input placeholder="Nazione" value={country} onChange={e => setCountry(e.target.value)} />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-1 rounded disabled:opacity-60"
-          disabled={submitting}
-        >
+        <button type="submit" className="bg-blue-500 text-white px-4 py-1 rounded disabled:opacity-60" disabled={submitting}>
           {submitting ? "In corso..." : "Crea azienda"}
         </button>
       </form>

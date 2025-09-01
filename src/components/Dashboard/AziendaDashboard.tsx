@@ -4,7 +4,8 @@ import { useData } from "../../state/DataContext";
 import Header from "../Common/Header";
 import Sidebar from "../Common/Sidebar";
 import { uid } from "../../utils/storage";
-import { generateDID, generateSeed } from "../../utils/cryptoUtils";
+// ⬇️ sostituisce generateDID / generateSeed
+import { generateMnemonic24, deriveMockAccount } from "../../utils/cryptoUtils";
 import AziendaJsonCenter from "./AziendaJsonCenter";
 
 type ActorRole = "creator" | "operatore" | "macchinario";
@@ -86,13 +87,16 @@ export default function AziendaDashboard() {
     if (!currentAzienda?.id) return alert("Nessuna azienda selezionata");
     if (!newMemberName.trim()) return alert("Inserisci un nome");
 
-    const did = (typeof generateDID === "function" && generateDID()) || `did:iota:evm:${uid(10)}`;
-    const seed = (typeof generateSeed === "function" && generateSeed()) || `SEED_${uid(12)}`;
+    // ✅ seed BIP-39 → derivazione mock → address → DID
+    const mnemonic = generateMnemonic24();
+    const acc = deriveMockAccount(mnemonic);
+    const did = `did:iota:evm:${acc.address}`;
 
     addActor({
-      id: did,
+      id: did,                 // manteniamo id = did per compatibilità
       did,
-      seed,
+      evmAddress: acc.address, // opzionale, utile per UI/debug
+      seed: mnemonic,          // in MOCK è ok tenerla nel record
       role: newMemberRole,
       name: newMemberName.trim(),
       owner: currentAzienda.id,
@@ -188,12 +192,14 @@ export default function AziendaDashboard() {
                       <div>
                         <div><strong>Ragione sociale:</strong> {currentAzienda.name}</div>
                         <div className="break-all">
-                          <strong>DID:</strong> <code className="text-xs">{currentAzienda.id}</code>{" "}
+                          <strong>DID:</strong>{" "}
+                          <code className="text-xs">{currentAzienda.id}</code>{" "}
                           <button className="text-blue-500 underline" onClick={() => copy(currentAzienda.id)}>Copia</button>
                         </div>
                         {currentAzienda.seed && (
                           <div className="break-all">
-                            <strong>Seed:</strong> <code className="text-xs">{currentAzienda.seed}</code>{" "}
+                            <strong>Seed:</strong>{" "}
+                            <code className="text-xs">{currentAzienda.seed}</code>{" "}
                             <button className="text-blue-500 underline" onClick={() => copy(currentAzienda.seed)}>Copia</button>
                           </div>
                         )}
@@ -271,8 +277,8 @@ export default function AziendaDashboard() {
                               <td className="py-2 pr-4 capitalize">{m.role}</td>
                               <td className="py-2 pr-4">{m.name || "-"}</td>
                               <td className="py-2 pr-4 break-all">
-                                <code className="text-xs">{m.id}</code>{" "}
-                                <button className="text-blue-500 underline" onClick={() => copy(m.id)}>
+                                <code className="text-xs">{m.did || m.id}</code>{" "}
+                                <button className="text-blue-500 underline" onClick={() => copy(m.did || m.id)}>
                                   Copia
                                 </button>
                               </td>
@@ -450,7 +456,7 @@ export default function AziendaDashboard() {
                             <tr key={m.id} className="border-t border-gray-100">
                               <td className="py-2 pr-4">{m.name || "-"}</td>
                               <td className="py-2 pr-4 capitalize">{m.role}</td>
-                              <td className="py-2 pr-4"><code className="text-xs break-all">{m.id}</code></td>
+                              <td className="py-2 pr-4"><code className="text-xs break-all">{m.did || m.id}</code></td>
                               <td className="py-2 pr-4">{actorBalance(m.id).toLocaleString()}</td>
                               <td className="py-2 pr-4">
                                 <div className="flex gap-2">

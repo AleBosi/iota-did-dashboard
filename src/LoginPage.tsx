@@ -6,7 +6,7 @@ import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+  import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,10 +16,11 @@ import { validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
 import { useSecrets } from "@/contexts/SecretsContext";
 import { findByDid, IdentityRole } from "@/utils/identityRegistry";
+import { registerIdentity } from "@/utils/identityRegistry";
 
 export default function LoginPage() {
   const { session, login, logout } = useUser();
-  const { state } = useData();
+  const { state, aziende, actors } = useData() as any;
   const { setSeed } = useSecrets();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -54,6 +55,25 @@ export default function LoginPage() {
     return "actor"; // creator / operatore
   }
 
+  function matchByDidOrAddrFactory(didIotaLc: string) {
+    return (obj: any) => {
+      const did = lc(obj?.did || obj?.id || obj?.account?.did);
+      const addr =
+        lc(obj?.evmAddress || obj?.account?.address || (obj?.did?.startsWith?.("did:iota:evm:") ? obj?.did.split(":").pop() : ""));
+      return did === didIotaLc || (addr && lc(`did:iota:evm:${addr}`) === didIotaLc);
+    };
+  }
+
+  function safeRegisterIdentity(payload: {
+    did: string;
+    type: IdentityRole;
+    id: string;
+    label?: string;
+    createdAt?: string;
+  }) {
+    try { registerIdentity(payload); } catch {}
+  }
+
   function handleSeedLogin(e: React.FormEvent) {
     e.preventDefault();
 
@@ -80,26 +100,30 @@ export default function LoginPage() {
     // Deriva DID coerente con la creazione
     const acc = deriveMockAccount(phrase);
     const didIota = lc(`did:iota:evm:${acc.address}`);
+    const matchByDidOrAddr = matchByDidOrAddrFactory(didIota);
 
     // Stato difensivo + alias italiani/inglesi
-    const companies = arr<any>(state?.companies || state?.aziende);
+    const companies = arr<any>((state?.companies || aziende) as any[]);
+    const globalActors = arr<any>((state?.actors || actors) as any[]);
 
     // 1) AZIENDA
-    const company = companies.find((c) => lc(c?.did || c?.id) === didIota);
+    const company =
+      companies.find((c) => lc(c?.did || c?.id) === didIota) ||
+      companies.find((c) => matchByDidOrAddr(c));
     if (company) {
       const entityId = company.id || company.did || didIota;
       setSeed({ type: "company", id: entityId }, phrase);
+      safeRegisterIdentity({
+        did: lc(company.did || entityId),
+        type: "azienda",
+        id: entityId,
+        label: company.name,
+        createdAt: company.createdAt,
+      });
       login("azienda", { seed: phrase, entityId });
       navigate(routeByRole["azienda"] || "/login", { replace: true });
       return;
     }
-
-    // helper match su attori/macchine
-    const matchByDidOrAddr = (obj: any) => {
-      const did = lc(obj?.did || obj?.id || obj?.account?.did);
-      const addr = lc(obj?.account?.address);
-      return did === didIota || (addr && lc(`did:iota:evm:${addr}`) === didIota);
-    };
 
     // 2) CREATOR / OPERATORE (annidati nell’azienda)
     for (const c of companies) {
@@ -110,6 +134,13 @@ export default function LoginPage() {
       if (foundCreator) {
         const entityId = foundCreator.id || foundCreator.did || didIota;
         setSeed({ type: "actor", id: entityId }, phrase);
+        safeRegisterIdentity({
+          did: lc(foundCreator.did || entityId),
+          type: "creator",
+          id: entityId,
+          label: foundCreator.name || "Creator",
+          createdAt: foundCreator.createdAt,
+        });
         login("creator", { seed: phrase, entityId });
         navigate(routeByRole["creator"] || "/login", { replace: true });
         return;
@@ -119,10 +150,36 @@ export default function LoginPage() {
       if (foundOperatore) {
         const entityId = foundOperatore.id || foundOperatore.did || didIota;
         setSeed({ type: "actor", id: entityId }, phrase);
+        safeRegisterIdentity({
+          did: lc(foundOperatore.did || entityId),
+          type: "operatore",
+          id: entityId,
+          label: foundOperatore.name || "Operatore",
+          createdAt: foundOperatore.createdAt,
+        });
         login("operatore", { seed: phrase, entityId });
         navigate(routeByRole["operatore"] || "/login", { replace: true });
         return;
       }
+    }
+
+    // 2.5) ATTORI GLOBALI (compat con store che non annida)
+    const foundGlobalActor = globalActors.find(matchByDidOrAddr);
+    if (foundGlobalActor) {
+      const entityId = foundGlobalActor.id || foundGlobalActor.did || didIota;
+      const role = (foundGlobalActor.role || "operatore") as IdentityRole; // default sicuro
+      const secretType = mapRoleToSecretType(role);
+      setSeed({ type: secretType, id: entityId }, phrase);
+      safeRegisterIdentity({
+        did: lc(foundGlobalActor.did || entityId),
+        type: role,
+        id: entityId,
+        label: foundGlobalActor.name,
+        createdAt: foundGlobalActor.createdAt,
+      });
+      login(role as any, { seed: phrase, entityId });
+      navigate(routeByRole[role] || "/login", { replace: true });
+      return;
     }
 
     // 3) MACCHINARIO (annidati nell’azienda)
@@ -132,6 +189,13 @@ export default function LoginPage() {
       if (found) {
         const entityId = found.id || found.did || didIota;
         setSeed({ type: "machine", id: entityId }, phrase);
+        safeRegisterIdentity({
+          did: lc(found.did || entityId),
+          type: "macchinario",
+          id: entityId,
+          label: found.name || "Macchinario",
+          createdAt: found.createdAt,
+        });
         login("macchinario", { seed: phrase, entityId });
         navigate(routeByRole["macchinario"] || "/login", { replace: true });
         return;
@@ -143,6 +207,14 @@ export default function LoginPage() {
     if (reg) {
       const secretType = mapRoleToSecretType(reg.type);
       setSeed({ type: secretType, id: reg.id }, phrase);
+      // assicura persistenza/refresh idempotente
+      safeRegisterIdentity({
+        did: lc(reg.did),
+        type: reg.type,
+        id: reg.id,
+        label: reg.label,
+        createdAt: reg.createdAt,
+      });
       login(reg.type as any, { seed: phrase, entityId: reg.id });
       navigate(routeByRole[reg.type] || "/login", { replace: true });
       return;

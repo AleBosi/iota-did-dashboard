@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import UnlockAccountModal from "@/components/Common/UnlockAccountModal";
 import SeedPasswordModal from "@/components/Common/SeedPasswordModal";
 import { useSecrets } from "@/contexts/SecretsContext";
-import { hasEncryptedSeed, generateMnemonic24 } from "@/utils/cryptoUtils";
+import { hasEncryptedSeed, generateMnemonic24, deriveMockAccount } from "@/utils/cryptoUtils";
 
 export default function AziendaDetails({
   azienda,
@@ -40,8 +40,25 @@ export default function AziendaDetails({
   };
 
   const handleSetPassword = () => {
-    const m = generateMnemonic24(); // 24 parole reali BIP39
+    // 1) se l’azienda ha già una seed valida (>=12 parole), riusiamola; altrimenti generiamo
+    const existing =
+      typeof a.seed === "string" && a.seed.split(" ").length >= 12 ? a.seed : "";
+
+    const m = existing || generateMnemonic24(); // 24 parole reali BIP39
     setMnemonicToSave(m);
+
+    // 2) allinea DID/Address alla seed (stessa pipeline di AziendaForm)
+    try {
+      const acc = deriveMockAccount(m);
+      const newDid = `did:iota:evm:${acc.address}`;
+      if (did !== newDid) {
+        onUpdate({ ...a, did: newDid, evmAddress: acc.address, seed: a.seed || m });
+      }
+    } catch {
+      // non bloccare l'UI in caso di errore di derivazione
+    }
+
+    // 3) apri la modale di impostazione password/salvataggio cifrato
     setSetPwdOpen(true);
   };
 
