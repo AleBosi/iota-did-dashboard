@@ -51,6 +51,8 @@ interface Task {
   notes?: string;
 }
 
+const lc = (s: any) => String(s || "").toLowerCase();
+
 export default function OperatorDashboard() {
   const { session, logout } = useUser();
   const data = (useData() as any) ?? {};
@@ -68,27 +70,56 @@ export default function OperatorDashboard() {
     }
   };
 
-  // resolve operatore corrente
+  // elenco operatori
   const operators: Actor[] = useMemo(
     () => (actors || []).filter((a: any) => a?.role === "operatore"),
     [actors]
   );
 
+  // === DID risolto in modo robusto (case-insensitive + canonicalizzazione) ===
   const resolvedDid = useMemo(() => {
-    const qs = new URLSearchParams(window.location.search).get("did") || "";
-    const sess = session?.role === "operatore" && (session as any)?.did ? (session as any).did : "";
+    const qsDid = new URLSearchParams(window.location.search).get("did") || "";
+    const sessDid =
+      session?.role === "operatore"
+        ? (session as any)?.did || (session as any)?.entityId || ""
+        : "";
     const cached = localStorage.getItem("lastOperatorDid") || "";
     const first = operators[0]?.id || "";
-    const did = qs || sess || cached || first || "";
-    if (did) localStorage.setItem("lastOperatorDid", did);
-    return did;
-  }, [session?.role, (session as any)?.did, operators]);
 
+    const candidatesRaw = [qsDid, sessDid, cached, first].filter(Boolean);
+    const byLcId = new Map<string, string>();
+    for (const a of actors as any[]) {
+      const key = lc(a?.id || a?.did);
+      if (key) byLcId.set(key, a.id); // canonical
+    }
+
+    for (const c of candidatesRaw) {
+      const kc = lc(c);
+      if (byLcId.has(kc)) {
+        const canonical = byLcId.get(kc)!;
+        localStorage.setItem("lastOperatorDid", canonical);
+        return canonical;
+      }
+    }
+
+    // fallback ultimo candidato raw (se non presente in store)
+    const fallback = candidatesRaw[0] || "";
+    if (fallback) localStorage.setItem("lastOperatorDid", fallback);
+    return fallback;
+  }, [actors, operators, session?.role, (session as any)?.did, (session as any)?.entityId]);
+
+  // operatore corrente
   const me: Actor | null = useMemo(() => {
     if (!resolvedDid) return null;
-    const found = (actors || []).find((a: any) => a.id === resolvedDid);
+    const found = (actors || []).find((a: any) => lc(a.id) === lc(resolvedDid));
     if (found) return found as Actor;
-    return { id: resolvedDid, name: (session as any)?.username || "Operatore", seed: "", credits: 0, role: "operatore" } as Actor;
+    return {
+      id: resolvedDid,
+      name: (session as any)?.username || "Operatore",
+      seed: "",
+      credits: 0,
+      role: "operatore",
+    } as Actor;
   }, [actors, resolvedDid, (session as any)?.username]);
 
   if (!operators.length && !me?.id) {
@@ -152,10 +183,10 @@ export default function OperatorDashboard() {
       .filter((e) => {
         const k = e?.kind || e?.type;
         const toMe =
-          e?.assignedOperatorDid === me.id ||
-          e?.operatorDid === me.id ||
-          e?.assignedToDid === me.id ||
-          e?.operatoreId === me.id;
+          lc(e?.assignedOperatorDid) === lc(me.id) ||
+          lc(e?.operatorDid) === lc(me.id) ||
+          lc(e?.assignedToDid) === lc(me.id) ||
+          lc(e?.operatoreId) === lc(me.id);
         return (k === "assignment" || k === "Assegnazione") && toMe;
       })
       .map((ev: any) => ({ ...ev, status: effectiveStatus(ev) }));
@@ -167,10 +198,12 @@ export default function OperatorDashboard() {
     [assignmentsForMe]
   );
 
-  // storico eventi per l’operatore
+  // storico eventi per l’operatore (più robusto sui campi)
   const myEvents: Event[] = useMemo(() => {
     const list = (allEvents || []) as Event[];
-    return list.filter((e: any) => e?.operatoreId === me.id);
+    return list.filter((e: any) =>
+      [e?.operatoreId, e?.operatorDid, e?.actorDid, e?.performedByDid].some((x) => lc(x) === lc(me.id))
+    );
   }, [allEvents, me.id]);
 
   // mutazioni

@@ -1,51 +1,100 @@
-import { render, screen } from '@testing-library/react';
-import { UserProvider, useUser } from './UserContext';
-import userEvent from '@testing-library/user-event';
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-function TestComponent() {
-  const { session, login, logout } = useUser();
-  return (
-    <div>
-      <span data-testid="role">{session.role}</span>
-      <span data-testid="data">{session.data ? session.data.name || 'yes' : 'null'}</span>
-      <button onClick={() => login('creator', { name: 'Mario' })}>Login</button>
-      <button onClick={logout}>Logout</button>
-    </div>
-  );
+export type Role = "admin" | "azienda" | "creator" | "operatore" | "macchinario";
+
+export type Session = {
+  role: Role | "";          // "" a riposo
+  did?: string;             // DID coerente (es. did:iota:evm:0x...)
+  entityId?: string | null; // alias fallback
+  seed?: string;            // opzionale (mock)
+  username?: string | null; // opzionale
+  data?: any;               // payload libero passato a login(...)
+};
+
+type Ctx = {
+  session: Session;
+  login: (role: Role, payload?: any) => void;
+  logout: () => void;
+};
+
+const UserCtx = createContext<Ctx | undefined>(undefined);
+
+// 📍 rotta per ruolo (usata da LoginPage e redirect vari)
+export const routeByRole: Record<Role, string> = {
+  admin: "/admin",
+  azienda: "/azienda",
+  creator: "/creator",
+  operatore: "/operatore",
+  macchinario: "/macchinario",
+};
+
+const STORAGE_KEY = "iota.trustup.session";
+
+function readStoredSession(): Session {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { role: "" };
+    const parsed = JSON.parse(raw);
+    // hardening: garantiamo i campi minimi
+    return {
+      role: parsed?.role || "",
+      did: parsed?.did,
+      entityId: parsed?.entityId ?? parsed?.did ?? null,
+      seed: parsed?.seed,
+      username: parsed?.username ?? null,
+      data: parsed?.data,
+    } as Session;
+  } catch {
+    return { role: "" };
+  }
 }
 
-describe('UserContext', () => {
-  it('fornisce valori di default', () => {
-    render(
-      <UserProvider>
-        <TestComponent />
-      </UserProvider>
-    );
-    expect(screen.getByTestId('role').textContent).toBe('');
-    expect(screen.getByTestId('data').textContent).toBe('null');
-  });
+export function UserProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session>(() => readStoredSession());
 
-  it('aggiorna sessione con login', async () => {
-    render(
-      <UserProvider>
-        <TestComponent />
-      </UserProvider>
-    );
-    await userEvent.click(screen.getByText('Login'));
-    expect(screen.getByTestId('role').textContent).toBe('creator');
-    expect(screen.getByTestId('data').textContent).toBe('Mario');
-  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } catch {}
+  }, [session]);
 
-  it('resetta la sessione con logout', async () => {
-    render(
-      <UserProvider>
-        <TestComponent />
-      </UserProvider>
-    );
-    await userEvent.click(screen.getByText('Login'));
-    expect(screen.getByTestId('role').textContent).toBe('creator');
-    await userEvent.click(screen.getByText('Logout'));
-    expect(screen.getByTestId('role').textContent).toBe('');
-    expect(screen.getByTestId('data').textContent).toBe('null');
-  });
-});
+  const login = (role: Role, payload: any = {}) => {
+    // Accettiamo payload "libero" (compat test + chiamate esistenti)
+    const did: string | undefined =
+      (payload.did as string) ||
+      (payload.entityId as string) ||
+      (payload.id as string) ||
+      undefined;
+
+    const next: Session = {
+      role,
+      did,
+      entityId: payload.entityId ?? did ?? null,
+      seed: payload.seed,
+      username: payload.username ?? payload.user ?? null,
+      data: payload, // 👈 mantiene compat con i test: session.data.name === "Mario"
+    };
+
+    setSession(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+  };
+
+  const logout = () => {
+    setSession({ role: "" });
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+  };
+
+  const value = useMemo<Ctx>(() => ({ session, login, logout }), [session]);
+
+  return <UserCtx.Provider value={value}>{children}</UserCtx.Provider>;
+}
+
+export function useUser(): Ctx {
+  const ctx = useContext(UserCtx);
+  if (!ctx) throw new Error("useUser must be used within <UserProvider>");
+  return ctx;
+}

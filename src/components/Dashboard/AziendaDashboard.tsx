@@ -28,11 +28,16 @@ export default function AziendaDashboard() {
 
   // --- azienda corrente (session -> prima disponibile) ---
   const currentAzienda = useMemo(() => {
-    if (session?.role === "azienda" && session?.did) {
-      return aziende.find((a: any) => a.id === session.did) || aziende[0];
+    const sessDid = (session as any)?.did || (session as any)?.entityId;
+    if (session?.role === "azienda" && sessDid) {
+      const match = aziende.find(
+        (a: any) =>
+          String(a?.id || a?.did).toLowerCase() === String(sessDid).toLowerCase()
+      );
+      if (match) return match;
     }
     return aziende[0];
-  }, [session?.role, session?.did, aziende]);
+  }, [session?.role, (session as any)?.did, (session as any)?.entityId, aziende]);
 
   const [tab, setTab] = useState<Tab>("panoramica");
 

@@ -25,6 +25,7 @@ async function sha256Hex(input: string): Promise<string> {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
+const lc = (s: any) => String(s || "").toLowerCase();
 
 type Tab = "overview" | "types" | "products" | "assignments" | "compose" | "vcs" | "json";
 
@@ -53,16 +54,25 @@ export default function CreatorDashboard() {
 
   /* ===== Creator corrente ===== */
   const currentCreator = useMemo(() => {
-    if (session?.role === "creator" && (session as any)?.did) {
-      return (actors || []).find((a: any) => a.id === (session as any).did);
+    const sessDid = (session as any)?.did || (session as any)?.entityId;
+    if (session?.role === "creator" && sessDid) {
+      const match = (actors || []).find(
+        (a: any) => lc(a?.id || a?.did) === lc(sessDid)
+      );
+      if (match) return match;
     }
     return (actors || []).find((a: any) => a.role === "creator");
-  }, [actors, session?.role, (session as any)?.did]);
+  }, [actors, session?.role, (session as any)?.did, (session as any)?.entityId]);
 
   const myAzienda = useMemo(() => {
-    if (!currentCreator?.owner) return undefined;
-    return (aziende || []).find((a: any) => a.id === currentCreator.owner);
-  }, [aziende, currentCreator?.owner]);
+    if (!currentCreator) return undefined;
+    const ownerDid =
+      currentCreator.owner ||
+      currentCreator.ownerDid ||
+      currentCreator.aziendaDid;
+    if (!ownerDid) return undefined;
+    return (aziende || []).find((a: any) => lc(a.id || a.did) === lc(ownerDid));
+  }, [aziende, currentCreator]);
 
   const creatorDid = currentCreator?.id;
   const creatorCredits = (creatorDid && credits?.byActor?.[creatorDid]) || 0;
@@ -103,7 +113,9 @@ export default function CreatorDashboard() {
 
   const typesForAzienda = useMemo(() => {
     if (!myAzienda?.id) return productTypes || [];
-    return (productTypes || []).filter((t: any) => !t.owner || t.owner === myAzienda.id);
+    return (productTypes || []).filter(
+      (t: any) => !t.owner || lc(t.owner) === lc(myAzienda.id)
+    );
   }, [productTypes, myAzienda?.id]);
 
   const onAddType = (e: React.FormEvent) => {
@@ -137,7 +149,10 @@ export default function CreatorDashboard() {
 
   const productsForAzienda = useMemo(() => {
     if (!myAzienda?.id) return products || [];
-    return (products || []).filter((p: any) => (p.owner || p.ownerDid || p.aziendaDid) === myAzienda.id);
+    return (products || []).filter(
+      (p: any) =>
+        lc(p.owner || p.ownerDid || p.aziendaDid) === lc(myAzienda.id)
+    );
   }, [products, myAzienda?.id]);
 
   const onAddProduct = (e: React.FormEvent) => {
@@ -217,7 +232,11 @@ export default function CreatorDashboard() {
   const [eventCost, setEventCost] = useState(1);
 
   const teamOfAzienda = useMemo(
-    () => (actors || []).filter((a: any) => a.owner === myAzienda?.id),
+    () =>
+      (actors || []).filter(
+        (a: any) =>
+          lc(a.owner || a.ownerDid || a.aziendaDid) === lc(myAzienda?.id)
+      ),
     [actors, myAzienda?.id]
   );
   const operators = teamOfAzienda.filter((a: any) => a.role === "operatore");

@@ -18,6 +18,7 @@ import UserCreditsHistory from "../Credits/UserCreditsHistory";
 import Sidebar from "../Common/Sidebar";
 import Header from "../Common/Header";
 
+/* =================== Types locali =================== */
 interface Task {
   id: string;
   title: string;
@@ -63,17 +64,23 @@ interface MacchinarioState {
   currentTelemetry: TelemetryData;
 }
 
+/* =================== Costanti =================== */
 const TELEMETRY_COST = 1;
 const AUTO_TASK_COST = 5;
-
 type Tab = "stato" | "tasks" | "eventi" | "vc" | "crediti";
 
+/* =================== Utils =================== */
+const lc = (s: any) => String(s || "").toLowerCase();
+
+/* =========================================================
+ *  Component
+ * =======================================================*/
 export default function MacchinarioDashboard() {
   const { session, logout } = useUser();
   const data = (useData() as any) ?? {};
   const { actors = [], credits, events: allEvents = [], addEvent, spendFromActor } = data;
 
-  // ===== Logout robusto =====
+  /* ===== Logout robusto ===== */
   const handleLogout = () => {
     try {
       logout?.();
@@ -83,28 +90,57 @@ export default function MacchinarioDashboard() {
     }
   };
 
-  // ===== Risoluzione macchina corrente =====
+  /* ===== Risoluzione macchina corrente (robusta/case-insensitive) ===== */
   const machines: Actor[] = useMemo(
     () => (actors || []).filter((a: any) => a?.role === "macchinario"),
     [actors]
   );
 
   const resolvedDid = useMemo(() => {
-    const qs = new URLSearchParams(window.location.search).get("did") || "";
-    const sess = session?.role === "macchinario" && session?.did ? session.did : "";
+    const qsDid = new URLSearchParams(window.location.search).get("did") || "";
+    const sessDid =
+      session?.role === "macchinario"
+        ? (session as any)?.did || (session as any)?.entityId || ""
+        : "";
     const cached = localStorage.getItem("lastMachineDid") || "";
     const first = machines[0]?.id || "";
-    const did = qs || sess || cached || first || "";
-    if (did) localStorage.setItem("lastMachineDid", did);
-    return did;
-  }, [session?.role, session?.did, machines]);
+
+    const candidatesRaw = [qsDid, sessDid, cached, first].filter(Boolean);
+
+    // mappa per canonicalizzare l'ID dalla lower-case
+    const byLcId = new Map<string, string>();
+    for (const a of actors as any[]) {
+      const key = lc(a?.id || a?.did);
+      if (key) byLcId.set(key, a.id); // ID canonico
+    }
+
+    for (const cand of candidatesRaw) {
+      const k = lc(cand);
+      if (byLcId.has(k)) {
+        const canonical = byLcId.get(k)!;
+        localStorage.setItem("lastMachineDid", canonical);
+        return canonical;
+      }
+    }
+
+    // fallback: primo candidato grezzo
+    const fallback = candidatesRaw[0] || "";
+    if (fallback) localStorage.setItem("lastMachineDid", fallback);
+    return fallback;
+  }, [actors, machines, session?.role, (session as any)?.did, (session as any)?.entityId]);
 
   const me: Actor | null = useMemo(() => {
     if (!resolvedDid) return null;
-    const found = (actors || []).find((a: any) => a.id === resolvedDid);
+    const found = (actors || []).find((a: any) => lc(a.id) === lc(resolvedDid));
     if (found) return found as Actor;
-    return { id: resolvedDid, name: session?.username || "Macchinario", seed: "", credits: 0, role: "macchinario" } as Actor;
-  }, [actors, resolvedDid, session?.username]);
+    return {
+      id: resolvedDid,
+      name: (session as any)?.username || "Macchinario",
+      seed: "",
+      credits: 0,
+      role: "macchinario",
+    } as Actor;
+  }, [actors, resolvedDid, (session as any)?.username]);
 
   if (!machines.length && !me?.id) {
     return (
@@ -133,7 +169,7 @@ export default function MacchinarioDashboard() {
   const machineCreditsGlobal =
     (typeof data.getCredits === "function" ? data.getCredits(machineDid) : credits?.byActor?.[machineDid]) ?? 0;
 
-  // ===== Stato UI =====
+  /* ===== Stato UI ===== */
   const [activeTab, setActiveTab] = useState<Tab>("stato");
 
   const [currentTelemetry, setCurrentTelemetry] = useState<TelemetryData>({
@@ -161,7 +197,7 @@ export default function MacchinarioDashboard() {
   const [creditsLocal, setCreditsLocal] = useState<number>(me.credits || 0);
   const [creditHistory, setCreditHistory] = useState<CreditTransaction[]>([]);
 
-  // ===== Caricamento persistente =====
+  /* ===== Caricamento persistente ===== */
   useEffect(() => {
     const saved = localStorage.getItem(`macchinario-${machineDid}-data`);
     if (saved) {
@@ -182,16 +218,16 @@ export default function MacchinarioDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [machineDid]);
 
-  // ===== Merge: assegnazioni DataContext -> tasks UI =====
+  /* ===== Merge: assignments DataContext -> tasks UI ===== */
   const assignmentsForMe = useMemo(() => {
     const list = (allEvents || []) as any[];
     return list.filter((e) => {
-      const k = e?.kind || e?.type; // compat legacy
+      const k = e?.kind || e?.type; // compat legacy/italiano
       const toMe =
-        e?.assignedMachineDid === machineDid ||
-        e?.machineDid === machineDid ||
-        e?.assignedToDid === machineDid;
-      return k === "assignment" && toMe;
+        lc(e?.assignedMachineDid) === lc(machineDid) ||
+        lc(e?.machineDid) === lc(machineDid) ||
+        lc(e?.assignedToDid) === lc(machineDid);
+      return (k === "assignment" || k === "Assegnazione") && toMe;
     });
   }, [allEvents, machineDid]);
 
@@ -217,7 +253,7 @@ export default function MacchinarioDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(assignmentsForMe)]);
 
-  // ===== Salvataggio persistente =====
+  /* ===== Salvataggio persistente ===== */
   useEffect(() => {
     const toSave: MacchinarioState = {
       assignedTasks,
@@ -232,7 +268,7 @@ export default function MacchinarioDashboard() {
     localStorage.setItem(`macchinario-${machineDid}-data`, JSON.stringify(toSave));
   }, [assignedTasks, completedTasks, events, machineVCs, telemetryHistory, creditsLocal, creditHistory, currentTelemetry, machineDid]);
 
-  // ===== Telemetria “live” =====
+  /* ===== Telemetria “live” ===== */
   useEffect(() => {
     const id = setInterval(() => {
       const t: TelemetryData = {
@@ -251,7 +287,7 @@ export default function MacchinarioDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  // ===== Helpers eventi globali =====
+  /* ===== Helpers eventi globali ===== */
   function appendStatus(task: Task, status: "active" | "completed") {
     if (!addEvent) return;
     addEvent({
@@ -296,7 +332,7 @@ export default function MacchinarioDashboard() {
     ]);
   }
 
-  // ===== Actions task =====
+  /* ===== Actions task ===== */
   const handleExecuteTask = (taskId: string) => {
     const task = assignedTasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -346,7 +382,7 @@ export default function MacchinarioDashboard() {
     ]);
   };
 
-  // ===== Tabs =====
+  /* ===== Tabs: render ===== */
   const renderStatoTab = () => (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Stato Macchina e Telemetria</h2>

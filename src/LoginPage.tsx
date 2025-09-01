@@ -6,7 +6,7 @@ import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-  import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,8 +15,7 @@ import { deriveMockAccount } from "@/utils/cryptoUtils";
 import { validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
 import { useSecrets } from "@/contexts/SecretsContext";
-import { findByDid, IdentityRole } from "@/utils/identityRegistry";
-import { registerIdentity } from "@/utils/identityRegistry";
+import { findByDid, IdentityRole, registerIdentity } from "@/utils/identityRegistry";
 
 export default function LoginPage() {
   const { session, login, logout } = useUser();
@@ -59,7 +58,11 @@ export default function LoginPage() {
     return (obj: any) => {
       const did = lc(obj?.did || obj?.id || obj?.account?.did);
       const addr =
-        lc(obj?.evmAddress || obj?.account?.address || (obj?.did?.startsWith?.("did:iota:evm:") ? obj?.did.split(":").pop() : ""));
+        lc(
+          obj?.evmAddress ||
+          obj?.account?.address ||
+          (obj?.did?.startsWith?.("did:iota:evm:") ? obj?.did.split(":").pop() : "")
+        );
       return did === didIotaLc || (addr && lc(`did:iota:evm:${addr}`) === didIotaLc);
     };
   }
@@ -120,7 +123,8 @@ export default function LoginPage() {
         label: company.name,
         createdAt: company.createdAt,
       });
-      login("azienda", { seed: phrase, entityId });
+      // 👇 aggiunto did
+      login("azienda", { seed: phrase, entityId, did: entityId });
       navigate(routeByRole["azienda"] || "/login", { replace: true });
       return;
     }
@@ -141,7 +145,8 @@ export default function LoginPage() {
           label: foundCreator.name || "Creator",
           createdAt: foundCreator.createdAt,
         });
-        login("creator", { seed: phrase, entityId });
+        // 👇 aggiunto did
+        login("creator", { seed: phrase, entityId, did: entityId });
         navigate(routeByRole["creator"] || "/login", { replace: true });
         return;
       }
@@ -157,7 +162,8 @@ export default function LoginPage() {
           label: foundOperatore.name || "Operatore",
           createdAt: foundOperatore.createdAt,
         });
-        login("operatore", { seed: phrase, entityId });
+        // 👇 aggiunto did
+        login("operatore", { seed: phrase, entityId, did: entityId });
         navigate(routeByRole["operatore"] || "/login", { replace: true });
         return;
       }
@@ -177,7 +183,8 @@ export default function LoginPage() {
         label: foundGlobalActor.name,
         createdAt: foundGlobalActor.createdAt,
       });
-      login(role as any, { seed: phrase, entityId });
+      // 👇 aggiunto did
+      login(role as any, { seed: phrase, entityId, did: entityId });
       navigate(routeByRole[role] || "/login", { replace: true });
       return;
     }
@@ -196,7 +203,8 @@ export default function LoginPage() {
           label: found.name || "Macchinario",
           createdAt: found.createdAt,
         });
-        login("macchinario", { seed: phrase, entityId });
+        // 👇 aggiunto did
+        login("macchinario", { seed: phrase, entityId, did: entityId });
         navigate(routeByRole["macchinario"] || "/login", { replace: true });
         return;
       }
@@ -215,7 +223,8 @@ export default function LoginPage() {
         label: reg.label,
         createdAt: reg.createdAt,
       });
-      login(reg.type as any, { seed: phrase, entityId: reg.id });
+      // 👇 aggiunto did
+      login(reg.type as any, { seed: phrase, entityId: reg.id, did: reg.id });
       navigate(routeByRole[reg.type] || "/login", { replace: true });
       return;
     }
