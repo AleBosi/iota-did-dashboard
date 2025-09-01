@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Actor } from "../../../models/actor";
+import { generateMnemonic24 } from "@/utils/cryptoUtils";
 
 interface Props {
   onCreate: (macchinario: Actor) => void;
@@ -10,17 +11,18 @@ export default function MacchinarioForm({ onCreate }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
 
-    // Genera un did temporaneo (puoi sostituire con generateDid() se vuoi)
-    const did = `did:iota:evm:macchinario:${Date.now()}`;
-    const macchinario: Actor = {
-      id: did,
-      did,
-      name: name.trim(),
+    // ✅ seed coerente con l’Azienda; DID/EVM saranno calcolati dal parent
+    const seed = generateMnemonic24();
+
+    const macchinario = {
+      name: trimmed,
       role: "macchinario",
-      vcIds: [],
-    };
+      seed,        // <— il parent calcola did/evm/id
+      vcIds: [],   // (manteniamo il campo se lo usi altrove)
+    } as Actor;
 
     onCreate(macchinario);
     setName("");
@@ -30,7 +32,7 @@ export default function MacchinarioForm({ onCreate }: Props) {
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
         value={name}
-        onChange={e => setName(e.target.value)}
+        onChange={(e) => setName(e.target.value)}
         placeholder="Nome macchinario"
         className="border px-2 py-1 rounded"
       />

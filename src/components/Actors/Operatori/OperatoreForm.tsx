@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { Actor } from "../../../models/actor";
+import { generateMnemonic24 } from "@/utils/cryptoUtils";
 
 interface Props {
   onCreate: (operatore: Actor) => void;
-}
-
-// Funzione mock per generare un DID coerente (sostituisci con la tua se serve)
-function generateDid(name: string) {
-  return "did:iota:evm:operatore:" + name.trim().toLowerCase().replace(/\s+/g, "-") + "-" + Date.now();
 }
 
 export default function OperatoreForm({ onCreate }: Props) {
@@ -15,14 +11,19 @@ export default function OperatoreForm({ onCreate }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    const did = generateDid(name);
-    const actor: Actor = {
-      id: did,
-      did,
-      name: name.trim(),
-      role: "operatore"
-    };
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    // ✅ stessa pipeline dell’Azienda: generiamo la seed BIP-39 (24 parole)
+    // DID ed EVM address verranno derivati dal parent con le stesse funzioni già usate per l’azienda.
+    const seed = generateMnemonic24();
+
+    const actor = {
+      name: trimmed,
+      role: "operatore",
+      seed,                // <— il parent calcola did/evm/id
+    } as Actor;
+
     onCreate(actor);
     setName("");
   };
@@ -31,7 +32,7 @@ export default function OperatoreForm({ onCreate }: Props) {
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
         value={name}
-        onChange={e => setName(e.target.value)}
+        onChange={(e) => setName(e.target.value)}
         placeholder="Nome operatore"
         className="border px-2 py-1 rounded"
       />

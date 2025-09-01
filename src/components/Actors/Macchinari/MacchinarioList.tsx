@@ -13,23 +13,35 @@ export default function MacchinarioList({ macchinari, onCopySeed }: Props) {
   return (
     <div className="flex gap-8">
       <ul className="w-1/2">
-        {macchinari.map(m => (
-          <li
-            key={m.id}
-            className="mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50"
-            onClick={() => setSelected(m)}
-          >
-            <span className="font-semibold">{m.name}</span>
-            <span className="text-xs text-gray-500 ml-2">({m.role})</span>
-            <span className="text-xs text-gray-400 ml-2">DID: {m.did}</span>
-            <button
-              className="ml-2 text-xs bg-blue-200 rounded px-2 py-1"
-              onClick={e => { e.stopPropagation(); onCopySeed?.(m.seed || ""); }}
+        {macchinari.map((m) => {
+          const did = m.did || "-";
+          const addr = m.evmAddress;
+          return (
+            <li
+              key={m.id}
+              className="mb-2 border-b pb-2 cursor-pointer hover:bg-blue-50"
+              onClick={() => setSelected(m)}
+              title={did}
             >
-              Copia seed
-            </button>
-          </li>
-        ))}
+              <span className="font-semibold">{m.name}</span>
+              <span className="text-xs text-gray-500 ml-2">({m.role})</span>
+              <span className="text-xs text-gray-400 ml-2">DID: {did}</span>
+              {addr && (
+                <span className="text-xs text-gray-400 ml-2">Addr: {addr}</span>
+              )}
+              <button
+                className="ml-2 text-xs bg-blue-200 rounded px-2 py-1 disabled:opacity-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (m.seed) onCopySeed?.(m.seed);
+                }}
+                disabled={!m.seed}
+              >
+                Copia seed
+              </button>
+            </li>
+          );
+        })}
       </ul>
       <div className="w-1/2">
         {selected && <MacchinarioDetails macchinario={selected} />}
