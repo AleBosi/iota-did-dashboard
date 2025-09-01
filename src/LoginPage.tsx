@@ -1,93 +1,160 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useUser, routeByRole, UserRole } from "./contexts/UserContext";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useUser, routeByRole } from "./contexts/UserContext";
 
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
+  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-type RoleOption = { value: UserRole; label: string };
-
-const ROLES: RoleOption[] = [
-  { value: "admin", label: "Admin" },
-  { value: "azienda", label: "Azienda" },
-  { value: "creator", label: "Creator" },
-  { value: "operatore", label: "Operatore" },
-  { value: "macchinario", label: "Macchinario" },
-];
-
-function normalizeDid(didInput: string | undefined): string | null {
-  const d = (didInput || "").trim();
-  return d.length ? d : null;
-}
+import { useData } from "@/state/DataContext";
+import { deriveMockAccount } from "@/utils/cryptoUtils";
+import { validateMnemonic } from "@scure/bip39";
+import { wordlist } from "@scure/bip39/wordlists/english";
+import { useSecrets } from "@/contexts/SecretsContext";
+import { findByDid, IdentityRole } from "@/utils/identityRegistry";
 
 export default function LoginPage() {
   const { session, login, logout } = useUser();
+  const { state } = useData();
+  const { setSeed } = useSecrets();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
-  const [role, setRole] = useState<UserRole>("admin");
-  const [seed, setSeed] = useState<string>("");
-  const [did, setDid] = useState<string>("");
+  const [seed, setSeedInput] = useState("");
 
   const forceReset = searchParams.get("reset") === "1";
+  const targetPath = useMemo(
+    () => (session.role ? routeByRole[session.role] || "/login" : "/login"),
+    [session.role]
+  );
 
-  const targetPath = useMemo(() => {
-    if (!session.role) return "/login";
-    return routeByRole[session.role] || "/login";
-  }, [session.role]);
-
-  // Se arrivi con ?reset=1, azzera la sessione e mostra il form.
   useEffect(() => {
-    if (forceReset) {
-      logout();
-      return;
-    }
-    if (session.role) {
-      navigate(targetPath, { replace: true });
-    }
+    if (forceReset) { logout(); return; }
+    if (session.role) navigate(targetPath, { replace: true });
   }, [forceReset, session.role, targetPath, navigate, logout]);
 
   function handleDemoAdmin() {
-    login("admin", { seed: "DEMO_ADMIN_SEED", did: null });
+    login("admin", { seed: "DEMO_ADMIN_SEED", entityId: null });
     navigate("/admin", { replace: true });
+  }
+
+  // helpers
+  const normalizeSeed = (s: string) => s.trim().replace(/\s+/g, " ");
+  const arr = <T,>(x: T[] | undefined | null): T[] => (Array.isArray(x) ? x : []);
+  const lc = (s: any) => String(s || "").toLowerCase();
+
+  function mapRoleToSecretType(role: IdentityRole): "company" | "actor" | "machine" {
+    if (role === "azienda") return "company";
+    if (role === "macchinario") return "machine";
+    return "actor"; // creator / operatore
   }
 
   function handleSeedLogin(e: React.FormEvent) {
     e.preventDefault();
 
-    if (role !== "admin" && !seed.trim()) {
+    const phrase = normalizeSeed(seed);
+    const words = phrase ? phrase.split(" ") : [];
+
+    if (!phrase) {
+      toast({ title: "Seed mancante", description: "Inserisci una seed phrase BIP39 (24 parole)." });
+      return;
+    }
+    if (words.length !== 24) {
       toast({
-        title: "Seed mancante",
-        description: "Inserisci un seed valido per il ruolo selezionato.",
+        title: "Seed non valida (lunghezza)",
+        description: `Hai inserito ${words.length} parole. Per questo progetto usiamo SEMPRE 24 parole.`,
+        variant: "destructive",
       });
       return;
     }
+    if (!validateMnemonic(phrase, wordlist)) {
+      toast({ title: "Seed non valida", description: "La seed non è una BIP39 valida (24 parole).", variant: "destructive" });
+      return;
+    }
 
-    const didNorm = normalizeDid(did);
-    login(role, {
-      seed: seed.trim() || null,
-      did: didNorm,
+    // Deriva DID coerente con la creazione
+    const acc = deriveMockAccount(phrase);
+    const didIota = lc(`did:iota:evm:${acc.address}`);
+
+    // Stato difensivo + alias italiani/inglesi
+    const companies = arr<any>(state?.companies || state?.aziende);
+
+    // 1) AZIENDA
+    const company = companies.find((c) => lc(c?.did || c?.id) === didIota);
+    if (company) {
+      const entityId = company.id || company.did || didIota;
+      setSeed({ type: "company", id: entityId }, phrase);
+      login("azienda", { seed: phrase, entityId });
+      navigate(routeByRole["azienda"] || "/login", { replace: true });
+      return;
+    }
+
+    // helper match su attori/macchine
+    const matchByDidOrAddr = (obj: any) => {
+      const did = lc(obj?.did || obj?.id || obj?.account?.did);
+      const addr = lc(obj?.account?.address);
+      return did === didIota || (addr && lc(`did:iota:evm:${addr}`) === didIota);
+    };
+
+    // 2) CREATOR / OPERATORE (annidati nell’azienda)
+    for (const c of companies) {
+      const creators  = arr<any>(c?.creators  || c?.creatori);
+      const operatori = arr<any>(c?.operatori || c?.operators);
+
+      const foundCreator = creators.find(matchByDidOrAddr);
+      if (foundCreator) {
+        const entityId = foundCreator.id || foundCreator.did || didIota;
+        setSeed({ type: "actor", id: entityId }, phrase);
+        login("creator", { seed: phrase, entityId });
+        navigate(routeByRole["creator"] || "/login", { replace: true });
+        return;
+      }
+
+      const foundOperatore = operatori.find(matchByDidOrAddr);
+      if (foundOperatore) {
+        const entityId = foundOperatore.id || foundOperatore.did || didIota;
+        setSeed({ type: "actor", id: entityId }, phrase);
+        login("operatore", { seed: phrase, entityId });
+        navigate(routeByRole["operatore"] || "/login", { replace: true });
+        return;
+      }
+    }
+
+    // 3) MACCHINARIO (annidati nell’azienda)
+    for (const c of companies) {
+      const macchinari = arr<any>(c?.macchinari || c?.machines);
+      const found = macchinari.find(matchByDidOrAddr);
+      if (found) {
+        const entityId = found.id || found.did || didIota;
+        setSeed({ type: "machine", id: entityId }, phrase);
+        login("macchinario", { seed: phrase, entityId });
+        navigate(routeByRole["macchinario"] || "/login", { replace: true });
+        return;
+      }
+    }
+
+    // 4) Fallback: registry locale (copre refresh/store vuoto)
+    const reg = findByDid(didIota);
+    if (reg) {
+      const secretType = mapRoleToSecretType(reg.type);
+      setSeed({ type: secretType, id: reg.id }, phrase);
+      login(reg.type as any, { seed: phrase, entityId: reg.id });
+      navigate(routeByRole[reg.type] || "/login", { replace: true });
+      return;
+    }
+
+    // Nessun match
+    toast({
+      title: "Nessuna identità trovata",
+      description:
+        "La seed è valida ma non corrisponde ad alcuna azienda / creator / operatore / macchinario registrato. Usa la seed a 24 parole mostrata in ‘Dettagli’ → ‘Sblocca e mostra seed’.",
+      variant: "destructive",
     });
-
-    navigate(routeByRole[role] || "/login", { replace: true });
   }
 
   return (
@@ -97,13 +164,10 @@ export default function LoginPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">TRUSTUP</CardTitle>
           </div>
-          <CardDescription>
-            Accedi per gestire identità, eventi e DPP.
-          </CardDescription>
+          <CardDescription>Accedi per gestire identità, eventi e DPP.</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Blocco demo admin */}
           <div className="rounded-2xl border p-4">
             <p className="text-sm text-muted-foreground mb-3">
               Esegue il login come <span className="font-medium text-foreground">Admin</span>.
@@ -113,55 +177,24 @@ export default function LoginPage() {
             </Button>
           </div>
 
-          {/* Form login */}
           <form onSubmit={handleSeedLogin} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1 space-y-2">
-                <Label>Ruolo</Label>
-                <Select value={role} onValueChange={(v: UserRole) => setRole(v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona ruolo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>
-                        {r.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2 space-y-2">
-                <Label>Seed</Label>
-                <Input
-                  placeholder="Incolla il seed dell'attore (es. azienda/creator/operatore/macchinario)"
-                  value={seed}
-                  onChange={(e) => setSeed(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label>DID (opzionale)</Label>
+              <Label>Seed (24 parole — BIP39)</Label>
               <Input
-                placeholder="did:iota:... (se già assegnato all'attore)"
-                value={did}
-                onChange={(e) => setDid(e.target.value)}
+                placeholder="Inserisci la seed phrase (24 parole)"
+                value={seed}
+                onChange={(e) => setSeedInput(e.target.value)}
                 autoComplete="off"
               />
             </div>
-
             <Button type="submit" className="w-full" size="lg">
-              Accedi
+              Accedi con Seed
             </Button>
           </form>
 
           <p className="text-xs text-muted-foreground">
-            Privacy: on-chain pubblichiamo solo hash/URI (no PII). Il payload VC/DPP resta off-chain
-            (IPFS/S3 o equivalente). Le azioni firmate consumano crediti e non richiedono wallet
-            utente (sponsored tx via Gas Station).
+            In modalità MOCK le seed sono cifrate nel browser e visibili in chiaro solo dopo sblocco con password.
+            Il sistema riconosce automaticamente l’identità dalla seed e reindirizza alla dashboard corretta.
           </p>
         </CardContent>
 

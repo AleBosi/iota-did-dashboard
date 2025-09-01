@@ -6,6 +6,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// ⬇️ AGGIUNTA: SecretsProvider per abilitare useSecrets ovunque (LoginPage compresa)
+import { SecretsProvider } from "@/contexts/SecretsContext";
+
 // Lazy routes (aggiorna i path se i file sono altrove)
 const AdminDashboard = lazy(() => import("./components/Dashboard/AdminDashboard"));
 const AziendaDashboard = lazy(() => import("./components/Dashboard/AziendaDashboard"));
@@ -92,55 +95,58 @@ export default function App() {
 
   return (
     <>
-      <Suspense fallback={<LoadingScreen />}>
-        <Routes>
-          <Route path="/" element={<RoleHomeRedirect />} />
-          <Route path="/login" element={<LoginPage />} />
+      {/* ⬇️ TUTTO l’albero (Routes incluse) è ora dentro SecretsProvider */}
+      <SecretsProvider>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<RoleHomeRedirect />} />
+            <Route path="/login" element={<LoginPage />} />
 
-          <Route
-            path="/admin/*"
-            element={
-              <RequireRole role="admin">
-                <AdminDashboard />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/azienda/*"
-            element={
-              <RequireRole role="azienda">
-                <AziendaDashboard />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/creator/*"
-            element={
-              <RequireRole role="creator">
-                <CreatorDashboard />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/operatore/*"
-            element={
-              <RequireRole role="operatore">
-                <OperatorDashboard />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/macchinario/*"
-            element={
-              <RequireRole role="macchinario">
-                <MacchinarioDashboard />
-              </RequireRole>
-            }
-          />
+            <Route
+              path="/admin/*"
+              element={
+                <RequireRole role="admin">
+                  <AdminDashboard />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/azienda/*"
+              element={
+                <RequireRole role="azienda">
+                  <AziendaDashboard />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/creator/*"
+              element={
+                <RequireRole role="creator">
+                  <CreatorDashboard />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/operatore/*"
+              element={
+                <RequireRole role="operatore">
+                  <OperatorDashboard />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/macchinario/*"
+              element={
+                <RequireRole role="macchinario">
+                  <MacchinarioDashboard />
+                </RequireRole>
+              }
+            />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </SecretsProvider>
 
       {/* Toast globali shadcn */}
       <Toaster />

@@ -15,7 +15,7 @@ export default function AziendaList({
 }) {
   if (!aziende || aziende.length === 0) {
     return <div className="text-sm text-gray-400">Nessuna azienda presente</div>;
-    }
+  }
 
   return (
     <div className="overflow-x-auto">

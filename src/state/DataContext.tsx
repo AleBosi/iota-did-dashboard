@@ -12,6 +12,7 @@ import type { Event as EventItem, AssignmentStatus } from "../models/event";
 import { effectiveStatus, canTransition } from "../models/event";
 
 import type { VerifiableCredential } from "../models/vc";
+import { useUser } from "../contexts/UserContext"; // ← NEW: per leggere session.role / entityId
 
 export interface CreditsLedger {
   admin: number;
@@ -119,7 +120,11 @@ function bootstrapIfNeeded(): DataState {
 }
 
 interface DataContextShape extends DataState {
-  // CRUD esistenti
+  // ===== selezione azienda corrente (NEW)
+  selectedCompanyId: string | null;
+  setSelectedCompanyId: (id: string | null) => void;
+
+  // ===== CRUD esistenti
   addAzienda: (a: Azienda) => void;
   updateAzienda: (a: Azienda) => void;
   removeAzienda: (aziendaId: string) => void;
@@ -170,6 +175,17 @@ const DataCtx = createContext<DataContextShape>(null as any);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<DataState>(() => bootstrapIfNeeded());
+
+  // === NEW: selezione azienda corrente, legata alla sessione
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const { session } = useUser();
+
+  // Se l'utente è un'AZIENDA, forziamo sempre la selezione sulla sua entityId
+  useEffect(() => {
+    if (session.role === "azienda" && session.entityId) {
+      setSelectedCompanyId(session.entityId);
+    }
+  }, [session.role, session.entityId]);
 
   useEffect(() => {
     safeSet(LSK.aziende, state.aziende);
@@ -416,7 +432,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<DataContextShape>(
     () => ({
+      // stato
       ...state,
+
+      // selezione azienda corrente (NEW)
+      selectedCompanyId,
+      setSelectedCompanyId,
+
+      // API esistenti
       addAzienda,
       updateAzienda,
       removeAzienda,
@@ -449,7 +472,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       resetAll,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state]
+    [state, selectedCompanyId]
   );
 
   return <DataCtx.Provider value={value}>{children}</DataCtx.Provider>;
