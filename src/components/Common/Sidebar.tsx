@@ -1,10 +1,25 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useUser } from "../../contexts/UserContext";
+// (opzionale) se vuoi gestire apertura/chiusura via AppContext:
+// import { useApp } from "../../contexts/AppContext";
+
+type UserRole = "admin" | "azienda" | "creator" | "operatore" | "macchinario";
 
 type Item = {
   id: string;
   label: string;
   icon?: React.ReactNode;
   disabled?: boolean;
+  /** se presente, la voce è visibile solo a questi ruoli */
+  roles?: UserRole[];
+};
+
+type Props = {
+  title?: string;
+  subtitle?: string;
+  items: Item[];
+  activeItem?: string;
+  onItemClick?: (id: string) => void;
 };
 
 export default function Sidebar({
@@ -13,15 +28,19 @@ export default function Sidebar({
   items,
   activeItem,
   onItemClick,
-  onLogout,
-}: {
-  title?: string;
-  subtitle?: string;
-  items: Item[];
-  activeItem?: string;
-  onItemClick?: (id: string) => void;
-  onLogout?: () => void;
-}) {
+}: Props) {
+  const { session, currentActor, logout } = useUser();
+  const role = (session?.role || currentActor?.role || "utente") as UserRole;
+
+  // Se un item ha "roles", lo mostro solo se include il ruolo corrente
+  const visibleItems = useMemo(
+    () =>
+      (items || []).filter((it) =>
+        Array.isArray(it.roles) ? it.roles.includes(role) : true
+      ),
+    [items, role]
+  );
+
   return (
     <aside
       className="
@@ -40,12 +59,15 @@ export default function Sidebar({
             {subtitle}
           </div>
         )}
+        <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+          {String(role)}
+        </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="space-y-1">
-          {items.map((it) => {
+          {visibleItems.map((it) => {
             const active = it.id === activeItem;
             const base =
               "w-full text-left flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition border";
@@ -57,7 +79,9 @@ export default function Sidebar({
                 <button
                   disabled={it.disabled}
                   onClick={() => !it.disabled && onItemClick?.(it.id)}
-                  className={`${base} ${cls} ${it.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`${base} ${cls} ${
+                    it.disabled ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   {it.icon ? <span className="shrink-0">{it.icon}</span> : null}
                   <span className="truncate">{it.label}</span>
@@ -71,7 +95,7 @@ export default function Sidebar({
       {/* Footer */}
       <div className="px-3 py-3 border-t border-border/60">
         <button
-          onClick={onLogout}
+          onClick={logout}
           className="
             w-full inline-flex items-center justify-center rounded-md
             bg-muted px-3 py-2 text-sm text-foreground/90
