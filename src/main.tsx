@@ -3,18 +3,15 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 
-// ⬇️ provider esistenti nel tuo progetto
-import { UserProvider } from "./contexts/UserContext";
-import { DataProvider } from "./state/DataContext";
-
-// ⬇️ nuovo provider (RAM per seed sbloccate)
-import { SecretsProvider } from "./contexts/SecretsContext";
+import { AppProvider } from "./contexts/AppContext";   // UI-only (tema, sidebar, flags)
+import { UserProvider } from "./contexts/UserContext"; // sessione/ruolo/DID
+import { DataProvider } from "./state/DataContext";    // dominio (actors, events, vc, crediti)
 
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <SecretsProvider>
+    <AppProvider>
       <UserProvider>
         <DataProvider>
           <BrowserRouter>
@@ -22,6 +19,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           </BrowserRouter>
         </DataProvider>
       </UserProvider>
-    </SecretsProvider>
+    </AppProvider>
   </React.StrictMode>
 );

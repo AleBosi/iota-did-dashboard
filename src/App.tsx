@@ -1,48 +1,11 @@
-import React, { Suspense, lazy, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "./LoginPage";
-import { useUser } from "./contexts/UserContext";
+import React, { Suspense, useEffect } from "react";
+import AppRouter from "./routes/AppRouter";
 import { Toaster } from "@/components/ui/toaster";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-
-// ⬇️ AGGIUNTA: SecretsProvider per abilitare useSecrets ovunque (LoginPage compresa)
 import { SecretsProvider } from "@/contexts/SecretsContext";
 
-// Lazy routes (aggiorna i path se i file sono altrove)
-const AdminDashboard = lazy(() => import("./components/Dashboard/AdminDashboard"));
-const AziendaDashboard = lazy(() => import("./components/Dashboard/AziendaDashboard"));
-const CreatorDashboard = lazy(() => import("./components/Dashboard/CreatorDashboard"));
-const OperatorDashboard = lazy(() => import("./components/Dashboard/OperatorDashboard"));
-const MacchinarioDashboard = lazy(() => import("./components/Dashboard/MacchinarioDashboard"));
-
-function RoleHomeRedirect() {
-  const { session } = useUser();
-  if (!session.role) return <Navigate to="/login" replace />;
-
-  const map: Record<string, string> = {
-    admin: "/admin",
-    azienda: "/azienda",
-    creator: "/creator",
-    operatore: "/operatore",
-    macchinario: "/macchinario",
-  };
-
-  const dest = map[String(session.role)] ?? "/login";
-  return <Navigate to={dest} replace />;
-}
-
-function RequireRole({
-  role,
-  children,
-}: {
-  role: "admin" | "azienda" | "creator" | "operatore" | "macchinario";
-  children: React.ReactNode;
-}) {
-  const { session } = useUser();
-  if (session.role !== role) return <Navigate to="/login" replace />;
-  return <>{children}</>;
-}
+// UI skeleton per il fallback durante i lazy import
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function LoadingScreen() {
   return (
@@ -95,56 +58,10 @@ export default function App() {
 
   return (
     <>
-      {/* ⬇️ TUTTO l’albero (Routes incluse) è ora dentro SecretsProvider */}
+      {/* Mettiamo l'intero albero dentro SecretsProvider così LoginPage & co. hanno accesso a useSecrets */}
       <SecretsProvider>
         <Suspense fallback={<LoadingScreen />}>
-          <Routes>
-            <Route path="/" element={<RoleHomeRedirect />} />
-            <Route path="/login" element={<LoginPage />} />
-
-            <Route
-              path="/admin/*"
-              element={
-                <RequireRole role="admin">
-                  <AdminDashboard />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="/azienda/*"
-              element={
-                <RequireRole role="azienda">
-                  <AziendaDashboard />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="/creator/*"
-              element={
-                <RequireRole role="creator">
-                  <CreatorDashboard />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="/operatore/*"
-              element={
-                <RequireRole role="operatore">
-                  <OperatorDashboard />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="/macchinario/*"
-              element={
-                <RequireRole role="macchinario">
-                  <MacchinarioDashboard />
-                </RequireRole>
-              }
-            />
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <AppRouter />
         </Suspense>
       </SecretsProvider>
 

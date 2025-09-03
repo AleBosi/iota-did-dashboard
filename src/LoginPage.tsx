@@ -5,6 +5,7 @@ import { useUser, routeByRole } from "./contexts/UserContext";
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
+  // (se i path dei componenti ui differiscono, lascia gli import originali)
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,9 +18,13 @@ import { wordlist } from "@scure/bip39/wordlists/english";
 import { useSecrets } from "@/contexts/SecretsContext";
 import { findByDid, IdentityRole, registerIdentity } from "@/utils/identityRegistry";
 
+// Helper locale: mappa ruolo -> path (fallback a routeByRole)
+const roleToPath = (role?: IdentityRole) =>
+  role ? routeByRole[role] || "/login" : "/login";
+
 export default function LoginPage() {
-  const { session, login, logout } = useUser();
-  const { state, aziende, actors } = useData() as any;
+  const { session, login, logout, currentActor } = useUser();
+  const { state, aziende, actors, seedCreditsIfEmpty } = useData() as any;
   const { setSeed } = useSecrets();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -29,18 +34,23 @@ export default function LoginPage() {
 
   const forceReset = searchParams.get("reset") === "1";
   const targetPath = useMemo(
-    () => (session.role ? routeByRole[session.role] || "/login" : "/login"),
+    () => (session.role ? roleToPath(session.role as IdentityRole) : "/login"),
     [session.role]
   );
 
+  // Redirect automatico se già loggato
   useEffect(() => {
     if (forceReset) { logout(); return; }
     if (session.role) navigate(targetPath, { replace: true });
   }, [forceReset, session.role, targetPath, navigate, logout]);
 
   function handleDemoAdmin() {
-    login("admin", { seed: "DEMO_ADMIN_SEED", entityId: null });
-    navigate("/admin", { replace: true });
+    try {
+      login("admin", { seed: "DEMO_ADMIN_SEED", entityId: null, did: "did:iota:demo:admin" });
+      navigate("/admin", { replace: true });
+    } catch (err: any) {
+      toast({ title: "Errore login demo", description: err?.message || String(err), variant: "destructive" });
+    }
   }
 
   // helpers
@@ -74,10 +84,10 @@ export default function LoginPage() {
     label?: string;
     createdAt?: string;
   }) {
-    try { registerIdentity(payload); } catch {}
+    try { registerIdentity(payload); } catch {/* no-op in mock */}
   }
 
-  function handleSeedLogin(e: React.FormEvent) {
+  async function handleSeedLogin(e: React.FormEvent) {
     e.preventDefault();
 
     const phrase = normalizeSeed(seed);
@@ -123,9 +133,10 @@ export default function LoginPage() {
         label: company.name,
         createdAt: company.createdAt,
       });
-      // 👇 aggiunto did
       login("azienda", { seed: phrase, entityId, did: entityId });
-      navigate(routeByRole["azienda"] || "/login", { replace: true });
+      // opzionale: seed crediti demo al primo accesso
+      try { seedCreditsIfEmpty?.(entityId, 10); } catch {}
+      navigate(roleToPath("azienda"), { replace: true });
       return;
     }
 
@@ -145,9 +156,9 @@ export default function LoginPage() {
           label: foundCreator.name || "Creator",
           createdAt: foundCreator.createdAt,
         });
-        // 👇 aggiunto did
         login("creator", { seed: phrase, entityId, did: entityId });
-        navigate(routeByRole["creator"] || "/login", { replace: true });
+        try { seedCreditsIfEmpty?.(entityId, 10); } catch {}
+        navigate(roleToPath("creator"), { replace: true });
         return;
       }
 
@@ -162,9 +173,8 @@ export default function LoginPage() {
           label: foundOperatore.name || "Operatore",
           createdAt: foundOperatore.createdAt,
         });
-        // 👇 aggiunto did
         login("operatore", { seed: phrase, entityId, did: entityId });
-        navigate(routeByRole["operatore"] || "/login", { replace: true });
+        navigate(roleToPath("operatore"), { replace: true });
         return;
       }
     }
@@ -183,9 +193,9 @@ export default function LoginPage() {
         label: foundGlobalActor.name,
         createdAt: foundGlobalActor.createdAt,
       });
-      // 👇 aggiunto did
       login(role as any, { seed: phrase, entityId, did: entityId });
-      navigate(routeByRole[role] || "/login", { replace: true });
+      if (role === "creator") { try { seedCreditsIfEmpty?.(entityId, 10); } catch {} }
+      navigate(roleToPath(role), { replace: true });
       return;
     }
 
@@ -203,9 +213,8 @@ export default function LoginPage() {
           label: found.name || "Macchinario",
           createdAt: found.createdAt,
         });
-        // 👇 aggiunto did
         login("macchinario", { seed: phrase, entityId, did: entityId });
-        navigate(routeByRole["macchinario"] || "/login", { replace: true });
+        navigate(roleToPath("macchinario"), { replace: true });
         return;
       }
     }
@@ -215,7 +224,6 @@ export default function LoginPage() {
     if (reg) {
       const secretType = mapRoleToSecretType(reg.type);
       setSeed({ type: secretType, id: reg.id }, phrase);
-      // assicura persistenza/refresh idempotente
       safeRegisterIdentity({
         did: lc(reg.did),
         type: reg.type,
@@ -223,9 +231,9 @@ export default function LoginPage() {
         label: reg.label,
         createdAt: reg.createdAt,
       });
-      // 👇 aggiunto did
       login(reg.type as any, { seed: phrase, entityId: reg.id, did: reg.id });
-      navigate(routeByRole[reg.type] || "/login", { replace: true });
+      if (reg.type === "creator") { try { seedCreditsIfEmpty?.(reg.id, 10); } catch {} }
+      navigate(roleToPath(reg.type as IdentityRole), { replace: true });
       return;
     }
 
